@@ -1,0 +1,56 @@
+# ============================================================
+# 织音 Loom · .gitignore
+# ============================================================
+
+# ---------- 高云 Gowin EDA 综合产物 ----------
+fpga/build/
+*.fs
+*.bin
+*.rbf
+*.prj
+*.ipc
+*.gprj.user
+*.cst.bak
+*.sdc.bak
+*.log
+*.html
+*.xml
+*.srr
+*.tr
+*.pat
+
+# ---------- 仿真产物 ----------
+*.vvp
+*.vcd
+*.lxt
+*.lxt2
+*.fst
+*.out
+sim/*.wav
+sim/*.pcm
+sim/*.txt
+!sim/README.md
+
+# ---------- Python ----------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# ---------- 编辑器 / IDE ----------
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ---------- 操作系统 ----------
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# ---------- 临时文件 ----------
+*.tmp
+*.bak
+~$*
