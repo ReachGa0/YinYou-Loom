@@ -3,33 +3,34 @@
 # ============================================================
 
 # ---------- 高云 Gowin EDA 综合产物 ----------
+# 全部限定在 fpga/ 下，避免误伤其它目录的同名文件
 fpga/build/
-*.fs
-*.bin
-*.rbf
-*.prj
-*.ipc
+fpga/**/*.fs
+fpga/**/*.bin
+fpga/**/*.rbf
+fpga/**/*.prj
+fpga/**/*.ipc
+fpga/**/*.log
+fpga/**/*.html
+fpga/**/*.xml
+fpga/**/*.srr
+fpga/**/*.tr
+fpga/**/*.pat
 *.gprj.user
 *.cst.bak
 *.sdc.bak
-*.log
-*.html
-*.xml
-*.srr
-*.tr
-*.pat
 
 # ---------- 仿真产物 ----------
+# 只排除"跑出来的"东西，不排除源文件
 *.vvp
 *.vcd
 *.lxt
 *.lxt2
 *.fst
-*.out
+sim/out/
 sim/*.wav
 sim/*.pcm
-sim/*.txt
-!sim/README.md
+sim/*.raw
 
 # ---------- Python ----------
 __pycache__/
@@ -52,5 +53,11 @@ desktop.ini
 
 # ---------- 临时文件 ----------
 *.tmp
-*.bak
 ~$*
+
+# ============================================================
+# 说明：以下内容**必须提交**，不要加入忽略列表
+#   data/wavetables/*.hex   RTL 的 $readmemh 依赖它
+#   tools/*.py              工程工具，保证可复现
+#   sim/tb_*.v              仿真套件
+# ============================================================
