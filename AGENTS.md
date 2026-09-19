@@ -15,7 +15,9 @@
 | 命题企业 | 广东高云半导体科技股份有限公司 |
 | 选题 | 选题二：基于 FPGA 的实时多音色合成电子乐器引擎 |
 | 平台 | Sipeed Tang Nano 20K（GW2AR-LV18QN88C8/I7） |
-| 关键资源 | 20736 LUT4 / 15552 FF / 2 PLL / 多个 DSP（18×18 乘法）/ BSRAM 容量待核实 |
+| 关键资源 | 20736 LUT4 / 15552 FF / 2 PLL / **48 × 18×18 DSP** / **828K bit BSRAM（46 块）** / 64M bit SDRAM / 64M bit Flash |
+| 音频输出 | **板载 MAX98357A I2S DAC+PA**（BCLK=PIN56 / LRCLK=PIN55 / DIN=PIN54 / PA_EN=PIN51） |
+| 工具链 | **Gowin EDA V1.9.11.03 Education**（无需 license） |
 
 **作品核心特征**：全部音频由 FPGA **逐音、逐样本**实时生成，纯 HDL 硬件逻辑实现，
 不含任何预录 PCM、推流或整段录音触发。
