@@ -1,16 +1,6 @@
-import math
 import sys
 
-FS = 48000
-
-def freq_to_inc(freq):
-    return round(freq * (1 << 32) / FS)
-
-def inc_to_freq(inc):
-    return inc * FS / (1 << 32)
-
-def cents_error(f_actual, f_target):
-    return 1200 * math.log2(f_actual / f_target)
+from loom_common import freq_to_inc, inc_to_freq, cents_error
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
@@ -33,5 +23,5 @@ if __name__ == "__main__":
             if abs(err) > max_err:
                 max_err = abs(err)
                 max_n = n
-        print("MIDI", max_n, "max error:", max_err, "cents")
+        print(f"MIDI {max_n} max error: {max_err:.9f} cents")
 
