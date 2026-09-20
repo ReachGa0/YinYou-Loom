@@ -16,6 +16,7 @@ module oled_sh1106 #(
 ) (
     input  wire clk,
     input  wire rst_n,
+    input  wire ssd1306_mode,       // 1 = 用 SSD1306 初始化序列，0 = SH1106
     output wire scl,
     inout  wire sda,
     output wire [1:0] dbg_phase     // 调试用：0=初始化 1=刷屏 2=开显示
@@ -28,39 +29,77 @@ module oled_sh1106 #(
     localparam INIT_LEN = 25;                  // 初始化命令条数（不含 0xAF）
 
     // ------------------------------------------------------------
-    // 初始化命令表（手册 4.4.2「内供 VCC」序列，去掉开显示命令）
+    // 初始化命令表（都不含开显示 0xAF，它在第一帧写完后单独发）
+    //
+    // 模块手册自相矛盾：机械图写 SSD1306，命令章节却指向 SH1106，
+    // 初始化序列用的是 SH1106 专有的 0xAD。因此这里两种都实现，
+    // 由 ssd1306_mode 选择，方便实机确认。
+    //
+    //   SH1106 ：电荷泵用 0xAD,0x8B；可见区从第 2 列开始（列地址 0x02）
+    //   SSD1306：电荷泵用 0x8D,0x14；可见区从第 0 列开始；页寻址模式 0x20,0x02
     // ------------------------------------------------------------
     function [7:0] init_cmd;
         input [4:0] idx;
         begin
-            case (idx)
-                5'd0 : init_cmd = 8'hAE;   // display off
-                5'd1 : init_cmd = 8'h02;   // 列地址低 4 位（SH1106 从第 2 列开始）
-                5'd2 : init_cmd = 8'h10;   // 列地址高 4 位
-                5'd3 : init_cmd = 8'h40;   // 显示起始行 = 0
-                5'd4 : init_cmd = 8'hB0;   // 页地址 = 0
-                5'd5 : init_cmd = 8'h81;   // 对比度设置
-                5'd6 : init_cmd = 8'hFF;   //   对比度值
-                5'd7 : init_cmd = 8'hA1;   // 段重映射
-                5'd8 : init_cmd = 8'hA6;   // 正常显示（非反色）
-                5'd9 : init_cmd = 8'hA8;   // 多路复用比
-                5'd10: init_cmd = 8'h3F;   //   1/64 duty
-                5'd11: init_cmd = 8'hAD;   // 电荷泵
-                5'd12: init_cmd = 8'h8B;   //   内部 VCC
-                5'd13: init_cmd = 8'h33;   //   VPP = 9V
-                5'd14: init_cmd = 8'hC8;   // COM 扫描方向反向
-                5'd15: init_cmd = 8'hD3;   // 显示偏移
-                5'd16: init_cmd = 8'h00;
-                5'd17: init_cmd = 8'hD5;   // 时钟分频
-                5'd18: init_cmd = 8'h80;
-                5'd19: init_cmd = 8'hD9;   // 预充电周期
-                5'd20: init_cmd = 8'h1F;
-                5'd21: init_cmd = 8'hDA;   // COM 引脚配置
-                5'd22: init_cmd = 8'h12;
-                5'd23: init_cmd = 8'hDB;   // VCOMH
-                5'd24: init_cmd = 8'h40;
-                default: init_cmd = 8'h00;
-            endcase
+            if (ssd1306_mode) begin
+                case (idx)
+                    5'd0 : init_cmd = 8'hAE;   // display off
+                    5'd1 : init_cmd = 8'hD5;   // 时钟分频
+                    5'd2 : init_cmd = 8'h80;
+                    5'd3 : init_cmd = 8'hA8;   // 多路复用比
+                    5'd4 : init_cmd = 8'h3F;   //   1/64
+                    5'd5 : init_cmd = 8'hD3;   // 显示偏移
+                    5'd6 : init_cmd = 8'h00;
+                    5'd7 : init_cmd = 8'h40;   // 显示起始行 0
+                    5'd8 : init_cmd = 8'h8D;   // 电荷泵（SSD1306 用 0x8D）
+                    5'd9 : init_cmd = 8'h14;   //   使能
+                    5'd10: init_cmd = 8'h20;   // 寻址模式
+                    5'd11: init_cmd = 8'h02;   //   页寻址（与 SH1106 写法一致）
+                    5'd12: init_cmd = 8'hA1;   // 段重映射
+                    5'd13: init_cmd = 8'hC8;   // COM 扫描方向反向
+                    5'd14: init_cmd = 8'hDA;   // COM 引脚配置
+                    5'd15: init_cmd = 8'h12;
+                    5'd16: init_cmd = 8'h81;   // 对比度
+                    5'd17: init_cmd = 8'hCF;
+                    5'd18: init_cmd = 8'hD9;   // 预充电周期
+                    5'd19: init_cmd = 8'hF1;
+                    5'd20: init_cmd = 8'hDB;   // VCOMH
+                    5'd21: init_cmd = 8'h40;
+                    5'd22: init_cmd = 8'hA4;   // 恢复显示 RAM 内容
+                    5'd23: init_cmd = 8'hA6;   // 正常显示（非反色）
+                    5'd24: init_cmd = 8'h00;   // 补位：低列地址 0（无害）
+                    default: init_cmd = 8'h00;
+                endcase
+            end else begin
+                case (idx)
+                    5'd0 : init_cmd = 8'hAE;   // display off
+                    5'd1 : init_cmd = 8'h02;   // 列地址低 4 位（SH1106 从第 2 列开始）
+                    5'd2 : init_cmd = 8'h10;   // 列地址高 4 位
+                    5'd3 : init_cmd = 8'h40;   // 显示起始行 = 0
+                    5'd4 : init_cmd = 8'hB0;   // 页地址 = 0
+                    5'd5 : init_cmd = 8'h81;   // 对比度设置
+                    5'd6 : init_cmd = 8'hFF;   //   对比度值
+                    5'd7 : init_cmd = 8'hA1;   // 段重映射
+                    5'd8 : init_cmd = 8'hA6;   // 正常显示（非反色）
+                    5'd9 : init_cmd = 8'hA8;   // 多路复用比
+                    5'd10: init_cmd = 8'h3F;   //   1/64 duty
+                    5'd11: init_cmd = 8'hAD;   // 电荷泵（SH1106 用 0xAD）
+                    5'd12: init_cmd = 8'h8B;   //   内部 VCC
+                    5'd13: init_cmd = 8'h33;   //   VPP = 9V
+                    5'd14: init_cmd = 8'hC8;   // COM 扫描方向反向
+                    5'd15: init_cmd = 8'hD3;   // 显示偏移
+                    5'd16: init_cmd = 8'h00;
+                    5'd17: init_cmd = 8'hD5;   // 时钟分频
+                    5'd18: init_cmd = 8'h80;
+                    5'd19: init_cmd = 8'hD9;   // 预充电周期
+                    5'd20: init_cmd = 8'h1F;
+                    5'd21: init_cmd = 8'hDA;   // COM 引脚配置
+                    5'd22: init_cmd = 8'h12;
+                    5'd23: init_cmd = 8'hDB;   // VCOMH
+                    5'd24: init_cmd = 8'h40;
+                    default: init_cmd = 8'h00;
+                endcase
+            end
         end
     endfunction
 
@@ -121,8 +160,11 @@ module oled_sh1106 #(
     // ------------------------------------------------------------
     // 当前要发送的三个字节
     // ------------------------------------------------------------
+    // SH1106 的可见区从第 2 列开始；SSD1306 从第 0 列开始
+    wire [7:0] col_lo = ssd1306_mode ? 8'h00 : 8'h02;
+
     wire [7:0] page_cmd_byte = (pcmd == 2'd0) ? (8'hB0 | {4'd0, page}) :
-                               (pcmd == 2'd1) ? 8'h02 : 8'h10;
+                               (pcmd == 2'd1) ? col_lo : 8'h10;
 
     wire [7:0] ctrl_byte = (phase == PH_FRAME && writing_data) ? CTRL_DATA : CTRL_CMD;
 

@@ -10,9 +10,13 @@
 
 module tb_oled_sh1106;
 
+    // 0 = SH1106 序列，1 = SSD1306 序列（用 iverilog -Ptb_oled_sh1106.MODE=1 切换）
+    parameter MODE = 0;
+
     reg clk   = 0;
     reg rst_n = 0;
 
+    wire ssd1306_mode = (MODE != 0);
     wire scl;
     wire sda;
     wire [1:0] dbg_phase;
@@ -26,11 +30,12 @@ module tb_oled_sh1106;
         .SCL_HZ     (10_000_000),      // 仿真加速
         .POR_CYCLES (100)
     ) u_dut (
-        .clk       (clk),
-        .rst_n     (rst_n),
-        .scl       (scl),
-        .sda       (sda),
-        .dbg_phase (dbg_phase)
+        .clk          (clk),
+        .rst_n        (rst_n),
+        .ssd1306_mode (ssd1306_mode),
+        .scl          (scl),
+        .sda          (sda),
+        .dbg_phase    (dbg_phase)
     );
 
     // ---------------- 严格从机模型 ----------------
@@ -107,19 +112,19 @@ module tb_oled_sh1106;
         $display("--- 初始化前 3 条命令 ---");
         chk("tx0.ctrl ", log_ctrl[0], 8'h00);
         chk("tx0.cmd  ", log_data[0], 8'hAE);
-        chk("tx1.cmd  ", log_data[1], 8'h02);
-        chk("tx2.cmd  ", log_data[2], 8'h10);
+        chk("tx1.cmd  ", log_data[1], MODE ? 8'hD5 : 8'h02);
+        chk("tx2.cmd  ", log_data[2], MODE ? 8'h80 : 8'h10);
 
         $display("");
-        $display("--- 初始化最后一条命令（第 25 条 = 0x40）---");
+        $display("--- 初始化最后一条命令（第 25 条）---");
         chk("tx24.ctrl", log_ctrl[24], 8'h00);
-        chk("tx24.cmd ", log_data[24], 8'h40);
+        chk("tx24.cmd ", log_data[24], MODE ? 8'h00 : 8'h40);
 
         $display("");
         $display("--- 第一帧页 0 的页设置（事务 25~27）---");
         chk("tx25.ctrl", log_ctrl[25], 8'h00);
         chk("tx25.page", log_data[25], 8'hB0);
-        chk("tx26.col ", log_data[26], 8'h02);
+        chk("tx26.col ", log_data[26], MODE ? 8'h00 : 8'h02);
         chk("tx27.col ", log_data[27], 8'h10);
 
         $display("");

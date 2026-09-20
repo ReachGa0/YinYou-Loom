@@ -9,6 +9,7 @@
 module oled_demo_top (
     input  wire clk,          // 27MHz
     input  wire key_n,        // 板载按键 S1，按下为低，可随时重新初始化
+    input  wire key2_n,       // 板载按键 S2，按下为低：按住时使用 SSD1306 初始化序列
     output wire scl,          // I2C 时钟  -> OLED SCL
     inout  wire sda,          // I2C 数据  -> OLED SDA
     output wire [2:0] led_n   // 板载 LED（低电平点亮），仅作调试指示
@@ -31,6 +32,10 @@ module oled_demo_top (
 
     wire [1:0] dbg_phase;
 
+    // 按住 S2 → SSD1306 模式；否则 SH1106 模式。
+    // 注意：模式在"初始化阶段"被采样，所以改变模式后要按一下 S1 重新初始化。
+    wire ssd1306_mode = ~key2_n;
+
     // ---- SH1106 控制器 ----
     oled_sh1106 #(
         .CLK_HZ     (27_000_000),
@@ -39,6 +44,7 @@ module oled_demo_top (
     ) u_oled (
         .clk       (clk),
         .rst_n     (rst_n),
+        .ssd1306_mode (ssd1306_mode),
         .scl       (scl),
         .sda       (sda),
         .dbg_phase (dbg_phase)
@@ -63,6 +69,6 @@ module oled_demo_top (
 
     assign led_n[0] = ~hb_cnt[23];                 // 心跳
     assign led_n[1] = (quiet_cnt != 22'h3FFFFF);   // I2C 有活动
-    assign led_n[2] = ~(dbg_phase != 2'd0);        // 初始化已完成
+    assign led_n[2] = ~ssd1306_mode;               // 亮 = SH1106 模式，灭 = SSD1306 模式
 
 endmodule
