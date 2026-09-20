@@ -2,7 +2,6 @@
 
 module loom_top (
     input  wire clk,          // 板载 27MHz 晶振（PIN4）
-    input  wire key_n,        // 板载按键 S1（PIN88），先预留
     output wire pa_en,        // 功放使能（PIN51），高有效
     output wire i2s_bclk,     // PIN56
     output wire i2s_lrck,     // PIN55
@@ -45,6 +44,7 @@ module loom_top (
     wire signed [15:0] sample;
     wire               sample_valid;
     wire               sample_en;      // 来自 i2s_tx 的每帧请求
+    wire               busy;           // 必须在例化之前声明
 
     // 波表路径要分两种运行环境：
     //   仿真（Icarus）从仓库根目录运行 → "data/wavetables/..."
@@ -77,8 +77,6 @@ module loom_top (
         .sample_valid  (sample_valid),
         .busy          (busy)
     );
-
-    wire busy;
 
     // ---------- 5. I2S 发送 ----------
     i2s_tx u_i2s (
