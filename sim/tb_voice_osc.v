@@ -3,77 +3,78 @@
 
 module tb_voice_osc;
 
-    //clock and reset
     reg clk = 0;
     reg rst_n = 0;
+    reg run = 1;
 
-    //100MHz clock: reverse every 5ns
     always #5 clk = ~clk;
 
-    //reset sequence: pull low for 100ns, then high
     initial begin
         rst_n = 0;
         #100;
         rst_n = 1;
     end
 
-    reg signed [15:0] wavetable [0:`TABLE_SIZE-1]; // `TABLE_SIZE samples, 16-bit signed
-    reg [`PHASE_BITS-1:0] phase = 0;               // 32-bit phase accumulator
-    wire [`TABLE_BITS-1:0] addr;                   // table address
-    wire signed [15:0] sample;                     // 16-bit signed output sample
+    // ---- 48kHz 采样使能：单周期脉冲 ----
+    localparam SAMPLE_DIV = 2083;   // 100MHz / 2083 ≈ 48kHz（仿真用）
 
-    reg [11:0] sample_cnt = 0;            // sample counter for simulation
+    reg [11:0] div_cnt = 0;
+    reg        sample_en = 0;
 
-    localparam ADDR_LSB = `PHASE_BITS - `TABLE_BITS; // 20
-    localparam INC = `INC_440;                       // 440Hz @ 48kHz
-    localparam SAMPLE_DIV = 2083;                    // 100MHz / 2083 ≈ 48kHz (simulation only)
-
-    // 上电时加载正弦波表
-    initial begin
-        $readmemh(`WAVETABLE_SINE, wavetable);
-    end
-
-    // 相位高 TABLE_BITS 位 -> 表地址；地址 -> 样本
-    assign addr = phase[`PHASE_BITS-1 : ADDR_LSB];
-    assign sample = wavetable[addr];
-
-    // every SAMPLE_DIV clock cycles, increment phase accumulator
     always @(posedge clk) begin
         if (!rst_n) begin
-            phase <= 0;
-            sample_cnt <= 0;
-        end else if (sample_cnt == SAMPLE_DIV - 1) begin
-            sample_cnt <= 0;
-            phase <= phase + INC;
+            div_cnt   <= 0;
+            sample_en <= 0;
+        end else if (div_cnt == SAMPLE_DIV - 1) begin
+            div_cnt   <= 0;
+            sample_en <= 1;
         end else begin
-            sample_cnt <= sample_cnt + 1;
+            div_cnt   <= div_cnt + 1;
+            sample_en <= 0;
         end
     end
 
-    //采样文件
-    integer f;        //句柄
-    integer i;        //循环变量
+    // ---- 被测模块 ----
+    wire signed [15:0] sample;
+    wire               sample_valid;
+
+    voice_osc #(
+        .PHASE_BITS (32),
+        .ADDR_BITS  (12),
+        .SAMPLE_W   (16),
+        .INIT_FILE  (`WAVETABLE_SINE)
+    ) u_osc (
+        .clk          (clk),
+        .rst_n        (rst_n),
+        .sample_en    (sample_en),
+        .inc          (`INC_440),
+        .run          (run),
+        .sample       (sample),
+        .sample_valid (sample_valid)
+    );
+
+    // ---- 采样写文件 ----
+    integer f;
+    integer i;
 
     initial begin
-        // 等待复位释放
         @(posedge rst_n);
 
-        // 打开文件
         f = $fopen("sim/out/sine_440.txt", "w");
         if (f == 0) begin
-            $display("ERROR: cannot open sim/out/sine_440.txt for writing");
+            $display("ERROR: cannot open sim/out/sine_440.txt");
             $finish;
         end
 
-        // 写 4800 个样本 （约 0.1 秒 @ 48kHz）
         for (i = 0; i < 4800; i = i + 1) begin
-            repeat (SAMPLE_DIV) @(posedge clk);
+            @(posedge clk);
+            while (!sample_valid)
+                @(posedge clk);
             $fwrite(f, "%d\n", sample);
         end
 
-        // 关闭文件
         $fclose(f);
-        $display("Sample data written to sim/out/sine_440.txt");
+        $display("done: wrote 4800 samples to sim/out/sine_440.txt");
         $finish;
     end
 

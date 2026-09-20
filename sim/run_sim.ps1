@@ -11,7 +11,7 @@ Set-Location $root
 New-Item -ItemType Directory -Force sim/out | Out-Null
 
 Write-Host "[1/4] 编译 testbench ..."
-iverilog -I rtl/common -g2012 -o sim/out/tb_voice_osc.vvp sim/tb_voice_osc.v
+iverilog -I rtl/common -g2012 -o sim/out/tb_voice_osc.vvp sim/tb_voice_osc.v rtl/synth/voice_osc.v rtl/synth/wavetable_rom.v
 if ($LASTEXITCODE -ne 0) { throw "iverilog 编译失败" }
 
 Write-Host "[2/4] 运行仿真 ..."
