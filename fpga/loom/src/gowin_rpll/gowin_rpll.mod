@@ -7,15 +7,15 @@
 
 -mod_name Gowin_rPLL
 -file_name gowin_rpll
--path C:/Users/ReachGao/Desktop/CodeX/Ç¶Èü/fpga/loom/src/gowin_rpll/
+-path C:/Users/ReachGao/Desktop/CodeX/loom/fpga/loom/src/gowin_rpll/
 -type PLL
 -rPll true
 -file_type vlg
 -dev_type GW2AR-18C
 -dyn_idiv_sel false
--idiv_sel 9
+-idiv_sel 25
 -dyn_fbdiv_sel false
--fbdiv_sel 23
+-fbdiv_sel 64
 -dyn_odiv_sel false
 -odiv_sel 8
 -dyn_da_en true
