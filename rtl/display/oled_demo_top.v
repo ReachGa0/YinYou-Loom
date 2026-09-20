@@ -10,7 +10,8 @@ module oled_demo_top (
     input  wire clk,          // 27MHz
     input  wire key_n,        // 板载按键 S1，按下为低，可随时重新初始化
     output wire scl,          // I2C 时钟  -> OLED SCL
-    inout  wire sda           // I2C 数据  -> OLED SDA
+    inout  wire sda,          // I2C 数据  -> OLED SDA
+    output wire [2:0] led_n   // 板载 LED（低电平点亮），仅作调试指示
 );
     // ---- 上电复位：约 2.4ms（65536 × 37ns）----
     reg [15:0] por_cnt  = 16'd0;
@@ -28,16 +29,40 @@ module oled_demo_top (
     // 上电稳定 + 按键松开，才释放复位
     wire rst_n = por_done & key_n;
 
+    wire [1:0] dbg_phase;
+
     // ---- SH1106 控制器 ----
     oled_sh1106 #(
         .CLK_HZ     (27_000_000),
         .SCL_HZ     (100_000),
         .POR_CYCLES (27_000_000 / 5)      // 上电等待约 200ms
     ) u_oled (
-        .clk   (clk),
-        .rst_n (rst_n),
-        .scl   (scl),
-        .sda   (sda)
+        .clk       (clk),
+        .rst_n     (rst_n),
+        .scl       (scl),
+        .sda       (sda),
+        .dbg_phase (dbg_phase)
     );
+
+    // ---------------- 调试指示 ----------------
+    // LED0：心跳，约 1.6Hz（27MHz / 2^24）
+    reg [23:0] hb_cnt = 24'd0;
+    always @(posedge clk)
+        hb_cnt <= hb_cnt + 1'b1;
+
+    // LED1：I2C 总线活动 —— SCL 有跳变就清零静默计数，静默够久则熄灭
+    reg        scl_d     = 1'b1;
+    reg [21:0] quiet_cnt = 22'd0;
+    always @(posedge clk) begin
+        scl_d <= scl;
+        if (scl != scl_d)
+            quiet_cnt <= 22'd0;
+        else if (quiet_cnt != 22'h3FFFFF)
+            quiet_cnt <= quiet_cnt + 1'b1;
+    end
+
+    assign led_n[0] = ~hb_cnt[23];                 // 心跳
+    assign led_n[1] = (quiet_cnt != 22'h3FFFFF);   // I2C 有活动
+    assign led_n[2] = ~(dbg_phase != 2'd0);        // 初始化已完成
 
 endmodule

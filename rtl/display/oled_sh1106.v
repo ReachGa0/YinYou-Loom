@@ -17,7 +17,8 @@ module oled_sh1106 #(
     input  wire clk,
     input  wire rst_n,
     output wire scl,
-    inout  wire sda
+    inout  wire sda,
+    output wire [1:0] dbg_phase     // 调试用：0=初始化 1=刷屏 2=开显示
 );
     // SH1106 从机地址 0x3C，左移一位 + 写标志 = 0x78
     localparam [7:0] I2C_ADDR   = 8'h78;
@@ -127,6 +128,8 @@ module oled_sh1106 #(
 
     wire [7:0] tx_byte = (bstep == 2'd0) ? I2C_ADDR :
                          (bstep == 2'd1) ? ctrl_byte : payload;
+
+    assign dbg_phase = phase;
 
     // ------------------------------------------------------------
     // I2C 主机
