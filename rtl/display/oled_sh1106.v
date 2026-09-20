@@ -105,11 +105,15 @@ module oled_sh1106 #(
     reg        writing_data;  // 1 = 正在发页数据
     reg        disp_on_sent;
 
-    reg        m_start;
+    reg        m_req;
     reg [7:0]  m_data;
     wire       m_busy;
+    wire       m_done;
     wire       m_ack;
-    reg        busy_seen;
+
+    // 一次事务固定三个字节：0=从机地址 1=控制字节 2=有效字节
+    wire m_first = (bstep == 2'd0);
+    wire m_last  = (bstep == 2'd2);
 
     localparam POR_W = $clog2(POR_CYCLES + 1);
     reg [POR_W-1:0] por_cnt;
@@ -138,15 +142,17 @@ module oled_sh1106 #(
         .CLK_HZ (CLK_HZ),
         .SCL_HZ (SCL_HZ)
     ) u_i2c (
-        .clk     (clk),
-        .rst_n   (rst_n),
-        .start   (m_start),
-        .data    (m_data),
-        .do_stop (1'b1),
-        .busy    (m_busy),
-        .ack     (m_ack),
-        .scl     (scl),
-        .sda     (sda)
+        .clk   (clk),
+        .rst_n (rst_n),
+        .req   (m_req),
+        .first (m_first),
+        .last  (m_last),
+        .data  (m_data),
+        .busy  (m_busy),
+        .done  (m_done),
+        .ack   (m_ack),
+        .scl   (scl),
+        .sda   (sda)
     );
 
     // ------------------------------------------------------------
@@ -164,9 +170,8 @@ module oled_sh1106 #(
             col          <= 8'd0;
             writing_data <= 1'b0;
             disp_on_sent <= 1'b0;
-            m_start      <= 1'b0;
+            m_req        <= 1'b0;
             m_data       <= 8'd0;
-            busy_seen    <= 1'b0;
         end else begin
             case (state)
 
@@ -178,17 +183,14 @@ module oled_sh1106 #(
                 end
 
                 S_ISSUE: begin
-                    m_data  <= tx_byte;
-                    m_start <= 1'b1;
-                    busy_seen <= 1'b0;
-                    state   <= S_WAIT;
+                    m_data <= tx_byte;
+                    m_req  <= 1'b1;
+                    state  <= S_WAIT;
                 end
 
                 S_WAIT: begin
-                    m_start <= 1'b0;
-                    if (m_busy)
-                        busy_seen <= 1'b1;
-                    else if (busy_seen)
+                    m_req <= 1'b0;
+                    if (m_done)
                         state <= S_NEXT;
                 end
 
