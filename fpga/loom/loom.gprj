@@ -5,6 +5,15 @@
     <Version>5</Version>
     <Device name="GW2AR-18C" pn="GW2AR-LV18QN88C8/I7">gw2ar18c-000</Device>
     <FileList>
+        <File path="src/loom.cst" type="file.cst" enable="1"/>
         <File path="src/gowin_rpll/gowin_rpll.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/loom_top.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/common/sync_reset.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/common/clk_div.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/synth/wavetable_rom.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/synth/voice_osc.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/synth/voice_adsr.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/synth/voice.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/io/i2s_tx.v" type="file.verilog" enable="1"/>
     </FileList>
 </Project>
