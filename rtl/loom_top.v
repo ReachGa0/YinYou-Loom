@@ -7,9 +7,9 @@ module loom_top (
     output wire i2s_lrck,     // PIN55
     output wire i2s_din       // PIN54
 );
-    // ---------- 1. PLL：27MHz -> 69.12MHz ----------
+    // ---------- 1. PLL：27MHz -> 72MHz ----------
 `ifdef SIM
-    // 仿真时不例化 Gowin 原语，测试台直接给 69.12MHz
+    // 仿真时不例化 Gowin 原语，测试台直接给 72MHz
     wire clk_sys  = clk;
     wire pll_lock = 1'b1;
 `else
@@ -30,10 +30,11 @@ module loom_top (
         .rst_n  (rst_n)
     );
 
-    // ---------- 3. I2S 位节拍：每 15 拍一个脉冲 ----------
+    // ---------- 3. I2S 位节拍：72MHz * 8 / 125 = 4.608MHz ----------
     wire bit_tick;
-    clk_div #(
-        .DIV (15)
+    frac_div #(
+        .STEP (8),
+        .DEN  (125)
     ) u_div (
         .clk   (clk_sys),
         .rst_n (rst_n),

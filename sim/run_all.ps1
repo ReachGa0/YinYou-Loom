@@ -64,6 +64,8 @@ foreach ($d in 15, 5, 30) {
     Test-Suite "tb_clk_div_$d" @("sim/tb_clk_div.v", "rtl/common/clk_div.v") "-Ptb_clk_div.DIV=$d"
 }
 
+Test-Suite "tb_frac_div" @("sim/tb_frac_div.v", "rtl/common/frac_div.v")
+
 Write-Host ""
 Write-Host "===== 3. I2S 发送器 ====="
 Test-Suite "tb_i2s_tx" @("sim/tb_i2s_tx.v", "rtl/io/i2s_tx.v")

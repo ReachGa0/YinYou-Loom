@@ -10,6 +10,7 @@
         <File path="../../rtl/loom_top.v" type="file.verilog" enable="1"/>
         <File path="../../rtl/common/sync_reset.v" type="file.verilog" enable="1"/>
         <File path="../../rtl/common/clk_div.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/common/frac_div.v" type="file.verilog" enable="1"/>
         <File path="../../rtl/synth/wavetable_rom.v" type="file.verilog" enable="1"/>
         <File path="../../rtl/synth/voice_osc.v" type="file.verilog" enable="1"/>
         <File path="../../rtl/synth/voice_adsr.v" type="file.verilog" enable="1"/>
