@@ -20,6 +20,7 @@ module tb_oled_sh1106;
     wire scl;
     wire sda;
     wire [1:0] dbg_phase;
+    wire       dbg_ack_seen;
 
     always #5 clk = ~clk;              // 100MHz 仿真时钟
     pullup(sda);
@@ -35,7 +36,8 @@ module tb_oled_sh1106;
         .ssd1306_mode (ssd1306_mode),
         .scl          (scl),
         .sda          (sda),
-        .dbg_phase    (dbg_phase)
+        .dbg_phase    (dbg_phase),
+        .dbg_ack_seen (dbg_ack_seen)
     );
 
     // ---------------- 严格从机模型 ----------------

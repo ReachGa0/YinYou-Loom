@@ -31,6 +31,7 @@ module oled_demo_top (
     wire rst_n = por_done & key_n;
 
     wire [1:0] dbg_phase;
+    wire       dbg_ack_seen;
 
     // 按住 S2 → SSD1306 模式；否则 SH1106 模式。
     // 注意：模式在"初始化阶段"被采样，所以改变模式后要按一下 S1 重新初始化。
@@ -42,12 +43,13 @@ module oled_demo_top (
         .SCL_HZ     (100_000),
         .POR_CYCLES (27_000_000 / 5)      // 上电等待约 200ms
     ) u_oled (
-        .clk       (clk),
-        .rst_n     (rst_n),
+        .clk          (clk),
+        .rst_n        (rst_n),
         .ssd1306_mode (ssd1306_mode),
-        .scl       (scl),
-        .sda       (sda),
-        .dbg_phase (dbg_phase)
+        .scl          (scl),
+        .sda          (sda),
+        .dbg_phase    (dbg_phase),
+        .dbg_ack_seen (dbg_ack_seen)
     );
 
     // ---------------- 调试指示 ----------------
@@ -69,6 +71,7 @@ module oled_demo_top (
 
     assign led_n[0] = ~hb_cnt[23];                 // 心跳
     assign led_n[1] = (quiet_cnt != 22'h3FFFFF);   // I2C 有活动
-    assign led_n[2] = ~ssd1306_mode;               // 亮 = SH1106 模式，灭 = SSD1306 模式
+    // LED2：亮 = 从机应答过（I2C 打通）；灭 = 从机从未应答
+    assign led_n[2] = ~dbg_ack_seen;
 
 endmodule

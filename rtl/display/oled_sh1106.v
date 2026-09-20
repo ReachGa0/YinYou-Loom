@@ -19,7 +19,8 @@ module oled_sh1106 #(
     input  wire ssd1306_mode,       // 1 = 用 SSD1306 初始化序列，0 = SH1106
     output wire scl,
     inout  wire sda,
-    output wire [1:0] dbg_phase     // 调试用：0=初始化 1=刷屏 2=开显示
+    output wire [1:0] dbg_phase,    // 调试用：0=初始化 1=刷屏 2=开显示
+    output reg        dbg_ack_seen  // 调试用：只要收到过一次从机应答就置 1
 );
     // SH1106 从机地址 0x3C，左移一位 + 写标志 = 0x78
     localparam [7:0] I2C_ADDR   = 8'h78;
@@ -176,6 +177,14 @@ module oled_sh1106 #(
                          (bstep == 2'd1) ? ctrl_byte : payload;
 
     assign dbg_phase = phase;
+
+    // 收到过一次 ACK（ack==0）就锁存，供 LED 指示
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n)
+            dbg_ack_seen <= 1'b0;
+        else if (m_done && !m_ack)
+            dbg_ack_seen <= 1'b1;
+    end
 
     // ------------------------------------------------------------
     // I2C 主机
