@@ -65,7 +65,11 @@ foreach ($d in 15, 5, 30) {
 }
 
 Write-Host ""
-Write-Host "===== 3. I2C 与显示 ====="
+Write-Host "===== 3. I2S 发送器 ====="
+Test-Suite "tb_i2s_tx" @("sim/tb_i2s_tx.v", "rtl/io/i2s_tx.v")
+
+Write-Host ""
+Write-Host "===== 4. I2C 与显示 ====="
 Test-Suite "tb_i2c_master" @(
     "sim/tb_i2c_master.v", "sim/i2c_slave_model.v", "rtl/io/i2c_master.v")
 
