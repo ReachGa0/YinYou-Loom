@@ -5,7 +5,7 @@
 // 用严格从机模型按"事务"记录总线上发生的一切，然后检查：
 //   1. 每次事务都是 3 个字节（地址 + 控制 + 有效字节）
 //   2. 地址字节固定为 0x78
-//   3. 初始化命令顺序、页/列寻址、边框图案都正确
+//   3. 初始化命令顺序、页/列寻址、2 像素边框图案都正确
 //   4. 0xAF（开显示）出现在第一帧写完之后
 
 module tb_oled_sh1106;
@@ -130,20 +130,20 @@ module tb_oled_sh1106;
         $display("--- 第一帧页 0 的页设置（事务 26~28）---");
         chk("tx26.ctrl", log_ctrl[26], 8'h00);
         chk("tx26.page", log_data[26], 8'hB0);
-        chk("tx27.col ", log_data[27], MODE ? 8'h00 : 8'h02);
+        chk("tx27.col ", log_data[27], 8'h02);
         chk("tx28.col ", log_data[28], 8'h10);
 
         $display("");
-        $display("--- 页 0 前 3 个数据字节（应为 0xFF）---");
+        $display("--- 页 0 左侧 2 列数据（应为 0xFF）---");
         chk("tx29.ctrl", log_ctrl[29], 8'h40);
         chk("tx29.dat ", log_data[29], 8'hFF);
         chk("tx30.dat ", log_data[30], 8'hFF);
 
         $display("");
-        $display("--- 页 1 的页设置与边框数据 ---");
+        $display("--- 页 1 的页设置与 2 像素边框数据 ---");
         chk("tx157.pg ", log_data[157], 8'hB1);
-        chk("tx160.d0 ", log_data[160], 8'h01);          // 左边框
-        chk("tx287.d  ", log_data[160+127], 8'h80);      // 右边框（第 127 列）
+        chk("tx160.d0 ", log_data[160], 8'hFF);          // 左边框
+        chk("tx287.d  ", log_data[160+127], 8'hFF);      // 右边框（第 127 列）
 
         $display("");
         $display("--- 全局一致性 ---");

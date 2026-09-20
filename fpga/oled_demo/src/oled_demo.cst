@@ -15,12 +15,13 @@ IO_PORT "key_n" PULL_MODE=UP IO_TYPE=LVCMOS33;
 IO_LOC "key2_n" 87;
 IO_PORT "key2_n" PULL_MODE=UP IO_TYPE=LVCMOS33;
 
-// I2C：SCL -> PIN52，SDA -> PIN53
+// I2C 隔离实验：换到普通 IO，排除 PIN52/53 的 SSPI 复用影响
+// SCL -> PIN71，SDA -> PIN72
 // 使能内部上拉：若 OLED 模块自带 4.7k 上拉也无妨，并联只会让上升沿更快
-IO_LOC "scl" 52;
+IO_LOC "scl" 71;
 IO_PORT "scl" PULL_MODE=UP DRIVE=8 IO_TYPE=LVCMOS33;
 
-IO_LOC "sda" 53;
+IO_LOC "sda" 72;
 IO_PORT "sda" PULL_MODE=UP DRIVE=8 IO_TYPE=LVCMOS33;
 
 // 板载 LED（低电平点亮），仅用于调试指示

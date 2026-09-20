@@ -28,7 +28,7 @@ module oled_demo_top (
     end
 
     // 上电稳定 + 按键松开，才释放复位
-    wire rst_n = por_done & key_n;
+    wire rst_n = por_done;
 
     wire [1:0] dbg_phase;
     wire       dbg_ack_seen;
