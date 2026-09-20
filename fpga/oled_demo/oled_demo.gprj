@@ -1,0 +1,14 @@
+<?xml version="1" encoding="UTF-8"?>
+<!DOCTYPE gowin-fpga-project>
+<Project>
+    <Template>FPGA</Template>
+    <Version>5</Version>
+    <Device name="GW2AR-18C" pn="GW2AR-LV18QN88C8/I7">gw2ar18c-000</Device>
+    <FileList>
+        <File path="src/oled_demo.cst" type="file.cst" enable="1"/>
+        <File path="src/oled_demo.sdc" type="file.sdc" enable="1"/>
+        <File path="../../rtl/display/oled_demo_top.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/display/oled_sh1106.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/io/i2c_master.v" type="file.verilog" enable="1"/>
+    </FileList>
+</Project>

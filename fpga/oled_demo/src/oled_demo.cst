@@ -1,0 +1,20 @@
+// ============================================================
+// oled_demo.cst —— SH1106 I2C 屏幕实验的引脚约束
+// 器件：GW2AR-LV18QN88C8/I7
+// ============================================================
+
+// 板载 27MHz 晶振
+IO_LOC "clk" 4;
+IO_PORT "clk" PULL_MODE=UP IO_TYPE=LVCMOS33;
+
+// 板载按键 S1（按下为低）
+IO_LOC "key_n" 88;
+IO_PORT "key_n" PULL_MODE=UP IO_TYPE=LVCMOS33;
+
+// I2C：SCL -> PIN52，SDA -> PIN53
+// 使能内部上拉：若 OLED 模块自带 4.7k 上拉也无妨，并联只会让上升沿更快
+IO_LOC "scl" 52;
+IO_PORT "scl" PULL_MODE=UP DRIVE=8 IO_TYPE=LVCMOS33;
+
+IO_LOC "sda" 53;
+IO_PORT "sda" PULL_MODE=UP DRIVE=8 IO_TYPE=LVCMOS33;
