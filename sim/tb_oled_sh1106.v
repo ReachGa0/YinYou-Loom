@@ -76,7 +76,8 @@ module tb_oled_sh1106;
                 log_data[tx_idx] <= rx_payload;
             end
             if (rx_addr  !== 8'h78) bad_addr  <= bad_addr  + 1;
-            if (nbytes   !== 8'd3)  bad_bytes <= bad_bytes + 1;
+            // 第 0 次是地址探测（单字节事务），其余都应是 3 字节事务
+            if (tx_idx != 0 && nbytes !== 8'd3)  bad_bytes <= bad_bytes + 1;
             if (rx_payload == 8'hAF) saw_af   <= 1'b1;
             tx_idx <= tx_idx + 1;
         end
@@ -111,35 +112,38 @@ module tb_oled_sh1106;
         $display("    地址错误次数 = %0d   字节数错误次数 = %0d", bad_addr, bad_bytes);
         $display("");
 
+        $display("--- 事务 0：地址探测（应为 0x78，单字节）---");
+        chk("probe.addr", log_addr[0], 8'h78);
+
         $display("--- 初始化前 3 条命令 ---");
-        chk("tx0.ctrl ", log_ctrl[0], 8'h00);
-        chk("tx0.cmd  ", log_data[0], 8'hAE);
-        chk("tx1.cmd  ", log_data[1], MODE ? 8'hD5 : 8'h02);
-        chk("tx2.cmd  ", log_data[2], MODE ? 8'h80 : 8'h10);
+        chk("tx1.ctrl ", log_ctrl[1], 8'h00);
+        chk("tx1.cmd  ", log_data[1], 8'hAE);
+        chk("tx2.cmd  ", log_data[2], MODE ? 8'hD5 : 8'h02);
+        chk("tx3.cmd  ", log_data[3], MODE ? 8'h80 : 8'h10);
 
         $display("");
         $display("--- 初始化最后一条命令（第 25 条）---");
-        chk("tx24.ctrl", log_ctrl[24], 8'h00);
-        chk("tx24.cmd ", log_data[24], MODE ? 8'h00 : 8'h40);
+        chk("tx25.ctrl", log_ctrl[25], 8'h00);
+        chk("tx25.cmd ", log_data[25], MODE ? 8'h00 : 8'h40);
 
         $display("");
-        $display("--- 第一帧页 0 的页设置（事务 25~27）---");
-        chk("tx25.ctrl", log_ctrl[25], 8'h00);
-        chk("tx25.page", log_data[25], 8'hB0);
-        chk("tx26.col ", log_data[26], MODE ? 8'h00 : 8'h02);
-        chk("tx27.col ", log_data[27], 8'h10);
+        $display("--- 第一帧页 0 的页设置（事务 26~28）---");
+        chk("tx26.ctrl", log_ctrl[26], 8'h00);
+        chk("tx26.page", log_data[26], 8'hB0);
+        chk("tx27.col ", log_data[27], MODE ? 8'h00 : 8'h02);
+        chk("tx28.col ", log_data[28], 8'h10);
 
         $display("");
         $display("--- 页 0 前 3 个数据字节（应为 0xFF）---");
-        chk("tx28.ctrl", log_ctrl[28], 8'h40);
-        chk("tx28.dat ", log_data[28], 8'hFF);
+        chk("tx29.ctrl", log_ctrl[29], 8'h40);
         chk("tx29.dat ", log_data[29], 8'hFF);
+        chk("tx30.dat ", log_data[30], 8'hFF);
 
         $display("");
         $display("--- 页 1 的页设置与边框数据 ---");
-        chk("tx156.pg ", log_data[156], 8'hB1);
-        chk("tx159.d0 ", log_data[159], 8'h01);          // 左边框
-        chk("tx286.d  ", log_data[159+127], 8'h80);      // 右边框（第 127 列）
+        chk("tx157.pg ", log_data[157], 8'hB1);
+        chk("tx160.d0 ", log_data[160], 8'h01);          // 左边框
+        chk("tx287.d  ", log_data[160+127], 8'h80);      // 右边框（第 127 列）
 
         $display("");
         $display("--- 全局一致性 ---");

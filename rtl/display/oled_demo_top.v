@@ -40,7 +40,7 @@ module oled_demo_top (
     // ---- SH1106 控制器 ----
     oled_sh1106 #(
         .CLK_HZ     (27_000_000),
-        .SCL_HZ     (100_000),
+        .SCL_HZ     (25_000),             // 诊断阶段降速：给上拉与线容留 4 倍余量
         .POR_CYCLES (27_000_000 / 5)      // 上电等待约 200ms
     ) u_oled (
         .clk          (clk),

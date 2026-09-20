@@ -133,7 +133,8 @@ module oled_sh1106 #(
 
     localparam PH_INIT  = 2'd0,
                PH_FRAME = 2'd1,
-               PH_ON    = 2'd2;
+               PH_ON    = 2'd2,
+               PH_PROBE = 2'd3;   // 上电先探测从机地址
 
     reg [2:0]  state;
     reg [1:0]  bstep;         // 事务内字节序号：0=地址 1=控制 2=有效字节
@@ -151,9 +152,15 @@ module oled_sh1106 #(
     wire       m_done;
     wire       m_ack;
 
+    // 从机地址自动探测：先试 0x3C（0x78），不应答再试 0x3D（0x7A）
+    reg [7:0]  addr_reg  = 8'h78;
+    reg        probe_idx = 1'b0;
+    wire [7:0] probe_addr = probe_idx ? 8'h7A : 8'h78;
+
     // 一次事务固定三个字节：0=从机地址 1=控制字节 2=有效字节
-    wire m_first = (bstep == 2'd0);
-    wire m_last  = (bstep == 2'd2);
+    // 探测阶段是单字节事务（同时带 START 和 STOP）
+    wire m_first = (phase == PH_PROBE) ? 1'b1 : (bstep == 2'd0);
+    wire m_last  = (phase == PH_PROBE) ? 1'b1 : (bstep == 2'd2);
 
     localparam POR_W = $clog2(POR_CYCLES + 1);
     reg [POR_W-1:0] por_cnt;
@@ -173,7 +180,8 @@ module oled_sh1106 #(
                          (phase == PH_FRAME) ? (writing_data ? pix_byte(page, col) : page_cmd_byte) :
                          8'hAF;                                  // PH_ON
 
-    wire [7:0] tx_byte = (bstep == 2'd0) ? I2C_ADDR :
+    wire [7:0] tx_byte = (phase == PH_PROBE) ? probe_addr :
+                         (bstep == 2'd0) ? addr_reg :
                          (bstep == 2'd1) ? ctrl_byte : payload;
 
     assign dbg_phase = phase;
@@ -214,7 +222,9 @@ module oled_sh1106 #(
             state        <= S_POR;
             por_cnt      <= {POR_W{1'b0}};
             bstep        <= 2'd0;
-            phase        <= PH_INIT;
+            phase        <= PH_PROBE;
+            addr_reg     <= 8'h78;
+            probe_idx    <= 1'b0;
             init_idx     <= 5'd0;
             page         <= 4'd0;
             pcmd         <= 2'd0;
@@ -246,7 +256,22 @@ module oled_sh1106 #(
                 end
 
                 S_NEXT: begin
-                    if (bstep != 2'd2) begin
+                    if (phase == PH_PROBE) begin
+                        // 探测：每字节一个独立事务
+                        bstep <= 2'd0;
+                        if (!m_ack) begin              // 收到 ACK → 采用这个地址
+                            addr_reg  <= probe_addr;
+                            probe_idx <= 1'b0;
+                            phase     <= PH_INIT;
+                        end else if (probe_idx) begin  // 两个地址都没应答
+                            addr_reg  <= 8'h78;
+                            probe_idx <= 1'b0;
+                            phase     <= PH_INIT;
+                        end else begin
+                            probe_idx <= 1'b1;         // 试下一个地址
+                        end
+                        state <= S_ISSUE;
+                    end else if (bstep != 2'd2) begin
                         bstep <= bstep + 1'b1;
                     end else begin
                         bstep <= 2'd0;
