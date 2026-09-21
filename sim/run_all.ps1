@@ -97,6 +97,10 @@ Write-Host ""
 Write-Host "===== 5. P5A 保底按键链路 ====="
 Test-Suite "tb_key_scan" @("sim/tb_key_scan.v", "rtl/input/key_scan.v")
 Test-Suite "tb_input_map" @("sim/tb_input_map.v", "rtl/input/input_map.v")
+Test-Suite "tb_rotary_decode" @(
+    "sim/tb_rotary_decode.v",
+    "rtl/input/rotary_decode.v",
+    "rtl/input/key_scan.v")
 Test-Suite "tb_p5_baseline" @(
     "sim/tb_p5_baseline.v",
     "rtl/input/key_scan.v",

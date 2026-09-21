@@ -34,8 +34,8 @@ module key_scan #(
 
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            sync0         <= {KEYS{1'b0}};
-            sync1         <= {KEYS{1'b0}};
+            sync0         <= {KEYS{1'b1}};
+            sync1         <= {KEYS{1'b1}};
             stable        <= {KEYS{1'b0}};
             press_pulse   <= {KEYS{1'b0}};
             release_pulse <= {KEYS{1'b0}};
