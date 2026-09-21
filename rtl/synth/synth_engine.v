@@ -15,6 +15,7 @@ module synth_engine #(
     parameter SAMPLE_W   = 16,
     parameter LEVEL_W    = 16,
     parameter NOTE_ID_W  = 7,
+    parameter [LEVEL_W-1:0] SUSTAIN_LEVEL = 16'd8192,
     parameter INIT_FILE0 = "data/wavetables/sine_4096x16.hex",
     parameter INIT_FILE1 = "data/wavetables/square_4096x16.hex"
 ) (
@@ -40,7 +41,7 @@ module synth_engine #(
     localparam [VOICES*LEVEL_W-1:0] D_STEP_FLAT =
         {VOICES{16'd20}};
     localparam [VOICES*LEVEL_W-1:0] SUSTAIN_FLAT =
-        {VOICES{16'd32768}};
+        {VOICES{SUSTAIN_LEVEL}};
     localparam [VOICES*LEVEL_W-1:0] R_STEP_FLAT =
         {VOICES{16'd20}};
 
