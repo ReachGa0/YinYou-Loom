@@ -26,7 +26,7 @@ module rotary_decode #(
     reg b_sync0, b_sync1;
     reg [1:0] stable_state;
     reg [CW-1:0] stable_cnt;
-    reg signed [3:0] quad_acc;
+    reg signed [4:0] quad_acc;
 
     wire [1:0] raw_state = {a_sync1, b_sync1};
 
@@ -49,6 +49,8 @@ module rotary_decode #(
     endfunction
 
     reg signed [2:0] delta;
+    wire signed [4:0] delta_ext = delta;
+    wire signed [4:0] next_acc  = quad_acc + delta_ext;
 
     key_scan #(
         .KEYS            (1),
@@ -70,7 +72,7 @@ module rotary_decode #(
             b_sync1      <= 1'b0;
             stable_state <= 2'b00;
             stable_cnt   <= {CW{1'b0}};
-            quad_acc     <= 4'sd0;
+            quad_acc     <= 5'sd0;
             rotate_left  <= 1'b0;
             rotate_right <= 1'b0;
         end else begin
@@ -90,14 +92,14 @@ module rotary_decode #(
                 stable_state <= raw_state;
 
                 if (delta != 0) begin
-                    if (quad_acc + delta >= 4) begin
-                        quad_acc     <= quad_acc + delta - 4;
+                    if (next_acc >= 5'sd4) begin
+                        quad_acc     <= next_acc - 5'sd4;
                         rotate_right <= 1'b1;
-                    end else if (quad_acc + delta <= -4) begin
-                        quad_acc    <= quad_acc + delta + 4;
+                    end else if (next_acc <= -5'sd4) begin
+                        quad_acc    <= next_acc + 5'sd4;
                         rotate_left <= 1'b1;
                     end else begin
-                        quad_acc <= quad_acc + delta;
+                        quad_acc <= next_acc;
                     end
                 end
             end else begin

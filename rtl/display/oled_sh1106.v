@@ -12,11 +12,13 @@
 module oled_sh1106 #(
     parameter CLK_HZ     = 27_000_000,
     parameter SCL_HZ     = 100_000,
-    parameter POR_CYCLES = 27_000_000 / 5      // 上电等待（默认约 200ms）
+    parameter POR_CYCLES = 27_000_000 / 5,     // 上电等待（默认约 200ms）
+    parameter PATTERN_MODE = 0                 // 0=原测试图案，1=六格调试图案
 ) (
     input  wire clk,
     input  wire rst_n,
     input  wire ssd1306_mode,       // 1 = 用 SSD1306 初始化序列，0 = SH1106
+    input  wire [5:0] indicator_bits,
     output wire scl,
     inout  wire sda,
     output wire [1:0] dbg_phase,    // 调试用：0=初始化 1=刷屏 2=开显示
@@ -110,37 +112,47 @@ module oled_sh1106 #(
     function [7:0] pix_byte;
         input [3:0] pg;
         input [7:0] cx;
+        input [5:0] bits;
         reg   [7:0] b;
+        integer block;
         begin
             b = 8'h00;
-            if (pg == 4'd0)
-                b = 8'h03;                 // 顶部 2 行像素
-            if (pg == 4'd7)
-                b = 8'hC0;                 // 底部 2 行像素
-            if (cx == 8'd0 || cx == 8'd1 ||
-                cx == 8'd126 || cx == 8'd127)
-                b = 8'hFF;                 // 左右各 2 列像素
+            if (PATTERN_MODE == 0) begin
+                if (pg == 4'd0)
+                    b = 8'h03;                 // 顶部 2 行像素
+                if (pg == 4'd7)
+                    b = 8'hC0;                 // 底部 2 行像素
+                if (cx == 8'd0 || cx == 8'd1 ||
+                    cx == 8'd126 || cx == 8'd127)
+                    b = 8'hFF;                 // 左右各 2 列像素
 
-            // 7 段式数字 3：水平段 x=40..87，右侧竖段 x=82..87
-            case (pg)
-                4'd1: b = b |
-                    ((cx >= 8'd40 && cx <= 8'd87) ? 8'h3F : 8'h00) |
-                    ((cx >= 8'd82 && cx <= 8'd87) ? 8'hC0 : 8'h00);
-                4'd2: b = b |
-                    ((cx >= 8'd82 && cx <= 8'd87) ? 8'hFF : 8'h00);
-                4'd3: b = b |
-                    ((cx >= 8'd82 && cx <= 8'd87) ? 8'h1F : 8'h00) |
-                    ((cx >= 8'd40 && cx <= 8'd87) ? 8'hE0 : 8'h00);
-                4'd4: b = b |
-                    ((cx >= 8'd40 && cx <= 8'd87) ? 8'h07 : 8'h00) |
-                    ((cx >= 8'd82 && cx <= 8'd87) ? 8'hF8 : 8'h00);
-                4'd5: b = b |
-                    ((cx >= 8'd82 && cx <= 8'd87) ? 8'hFF : 8'h00);
-                4'd6: b = b |
-                    ((cx >= 8'd82 && cx <= 8'd87) ? 8'h03 : 8'h00) |
-                    ((cx >= 8'd40 && cx <= 8'd87) ? 8'hFC : 8'h00);
-                default: b = b;
-            endcase
+                // 7 段式数字 3：水平段 x=40..87，右侧竖段 x=82..87
+                case (pg)
+                    4'd1: b = b |
+                        ((cx >= 8'd40 && cx <= 8'd87) ? 8'h3F : 8'h00) |
+                        ((cx >= 8'd82 && cx <= 8'd87) ? 8'hC0 : 8'h00);
+                    4'd2: b = b |
+                        ((cx >= 8'd82 && cx <= 8'd87) ? 8'hFF : 8'h00);
+                    4'd3: b = b |
+                        ((cx >= 8'd82 && cx <= 8'd87) ? 8'h1F : 8'h00) |
+                        ((cx >= 8'd40 && cx <= 8'd87) ? 8'hE0 : 8'h00);
+                    4'd4: b = b |
+                        ((cx >= 8'd40 && cx <= 8'd87) ? 8'h07 : 8'h00) |
+                        ((cx >= 8'd82 && cx <= 8'd87) ? 8'hF8 : 8'h00);
+                    4'd5: b = b |
+                        ((cx >= 8'd82 && cx <= 8'd87) ? 8'hFF : 8'h00);
+                    4'd6: b = b |
+                        ((cx >= 8'd82 && cx <= 8'd87) ? 8'h03 : 8'h00) |
+                        ((cx >= 8'd40 && cx <= 8'd87) ? 8'hFC : 8'h00);
+                    default: b = b;
+                endcase
+            end else begin
+                // 六格调试图案：每格约 19 像素宽，bit=1 时填充。
+                for (block = 0; block < 6; block = block + 1)
+                    if (cx >= block*21 && cx <= block*21 + 18 &&
+                        pg >= 4'd1 && pg <= 4'd6)
+                        b = bits[block] ? 8'hFF : 8'h00;
+            end
             pix_byte = b;
         end
     endfunction
@@ -199,7 +211,7 @@ module oled_sh1106 #(
     wire [7:0] ctrl_byte = (phase == PH_FRAME && writing_data) ? CTRL_DATA : CTRL_CMD;
 
     wire [7:0] payload = (phase == PH_INIT)  ? init_cmd(init_idx) :
-                         (phase == PH_FRAME) ? (writing_data ? pix_byte(page, col) : page_cmd_byte) :
+                         (phase == PH_FRAME) ? (writing_data ? pix_byte(page, col, indicator_bits) : page_cmd_byte) :
                          8'hAF;                                  // PH_ON
 
     wire [7:0] tx_byte = (phase == PH_PROBE) ? probe_addr :

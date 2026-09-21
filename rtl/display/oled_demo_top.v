@@ -46,6 +46,7 @@ module oled_demo_top (
         .clk          (clk),
         .rst_n        (rst_n),
         .ssd1306_mode (ssd1306_mode),
+        .indicator_bits (6'b0),
         .scl          (scl),
         .sda          (sda),
         .dbg_phase    (dbg_phase),

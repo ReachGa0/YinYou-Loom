@@ -128,6 +128,8 @@ void I2C1_ER_IRQHandler(void)   { HAL_I2C_ER_IRQHandler(&hi2c1); }
 | `rtl/display/oled_sh1106.v` | 实机点亮，完成列偏移和方向校准 |
 | `rtl/display/oled_demo_top.v` | 实机运行，当前使用 `por_done` 复位 |
 | `fpga/oled_demo/` | 综合、布局布线、位流生成正常 |
+| `rtl/encoder_test_top.v` | EC11 + OLED 六格调试顶层，位流生成正常 |
+| `fpga/encoder_test/` | 编码器 A/B/C 与 OLED 联合测试工程 |
 | STM32 测试工程 | 已完成主机、从机、边沿计数三类验证 |
 
 ---
@@ -135,8 +137,25 @@ void I2C1_ER_IRQHandler(void)   { HAL_I2C_ER_IRQHandler(&hi2c1); }
 ## 五、后续清理项
 
 1. `key_n` 当前未参与逻辑，会产生未使用输入警告；后续要么移除顶层端口和 `.cst` 约束，要么改成“重新初始化”按键。
-2. 当前 `pix_byte` 是测试图案（2 像素边框 + 数字 `3`），后续做实时视觉反馈时需要替换为通用帧缓冲或波形显示。
+2. `pix_byte` 现在支持两种图案：默认边框/数字 `3`，以及 `PATTERN_MODE=1` 的六格调试条。后续做正式产品 TFT 显示时，再替换为通用帧缓冲或文本绘制。
 3. OLED 相关实验改动已统一整理提交。
+
+### EC11 + OLED 联合调试
+
+用于确认五引脚 EC11 模块的实际引脚行为：
+
+- 编码器 A/B/C 分别接 PIN25/PIN26/PIN27；
+- OLED SCL/SDA 继续使用 PIN71/PIN72；
+- OLED 六格从左到右表示左旋事件、右旋事件、按压事件、C 消抖状态、A 原始状态、B 原始状态；
+- 位流位于 `fpga/encoder_test/impl/pnr/encoder_test.fs`。
+
+上电观察方式：
+
+- 旋转编码器时，观察左侧两格是否发生翻转；
+- 按下轴时，观察第三、第四格是否变化；
+- 如果第五、第六格随旋转交替变化，说明 A/B 正常；
+- 如果按轴时只有第四格变化，说明 C 是按键输出；
+- 如果 C 在旋转时也变化，说明它不是单纯按键，需要重新确认接线。
 
 ---
 
