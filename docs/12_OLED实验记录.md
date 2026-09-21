@@ -157,6 +157,22 @@ void I2C1_ER_IRQHandler(void)   { HAL_I2C_ER_IRQHandler(&hi2c1); }
 - 如果按轴时只有第四格变化，说明 C 是按键输出；
 - 如果 C 在旋转时也变化，说明它不是单纯按键，需要重新确认接线。
 
+如果 A/B/C 的对应关系仍不明确，可烧录更简单的原始电平探针位流：
+
+```text
+fpga/encoder_raw_test/impl/pnr/encoder_raw_test.fs
+```
+
+探针位流的 LED 含义：
+
+```text
+LED0 = A 为低      LED1 = A 为高
+LED2 = B 为低      LED3 = B 为高
+LED4 = C 为低      LED5 = C 为高
+```
+
+旋转时哪一对 LED 交替亮灭，就说明哪一个引脚正在输出编码器信号。
+
 ---
 
 ## 六、经验教训
