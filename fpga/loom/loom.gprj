@@ -17,8 +17,10 @@
         <File path="../../rtl/synth/voice_osc.v" type="file.verilog" enable="1"/>
         <File path="../../rtl/synth/voice_adsr.v" type="file.verilog" enable="1"/>
         <File path="../../rtl/synth/voice.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/synth/voice_alloc.v" type="file.verilog" enable="1"/>
         <File path="../../rtl/synth/mixer.v" type="file.verilog" enable="1"/>
         <File path="../../rtl/synth/synth_top.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/synth/synth_engine.v" type="file.verilog" enable="1"/>
         <File path="../../rtl/io/i2s_tx.v" type="file.verilog" enable="1"/>
     </FileList>
 </Project>

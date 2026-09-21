@@ -78,6 +78,21 @@ Test-Suite "tb_wavetable_arbiter_8" @(
     "rtl/synth/wavetable_bank.v",
     "rtl/synth/wavetable_rom.v") "-Ptb_wavetable_arbiter.VOICES=8"
 
+Test-Suite "tb_voice_alloc" @("sim/tb_voice_alloc.v", "rtl/synth/voice_alloc.v")
+Test-Suite "tb_mixer" @("sim/tb_mixer.v", "rtl/synth/mixer.v")
+Test-Suite "tb_synth_engine" @(
+    "sim/tb_synth_engine.v",
+    "rtl/synth/synth_engine.v",
+    "rtl/synth/synth_top.v",
+    "rtl/synth/mixer.v",
+    "rtl/synth/wavetable_arbiter.v",
+    "rtl/synth/wavetable_bank.v",
+    "rtl/synth/wavetable_rom.v",
+    "rtl/synth/voice.v",
+    "rtl/synth/voice_osc.v",
+    "rtl/synth/voice_adsr.v",
+    "rtl/synth/voice_alloc.v")
+
 Write-Host ""
 Write-Host "===== 3. I2S 发送器 ====="
 Test-Suite "tb_i2s_tx" @("sim/tb_i2s_tx.v", "rtl/io/i2s_tx.v")
