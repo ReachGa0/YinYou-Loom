@@ -21,6 +21,8 @@
         <File path="../../rtl/synth/mixer.v" type="file.verilog" enable="1"/>
         <File path="../../rtl/synth/synth_top.v" type="file.verilog" enable="1"/>
         <File path="../../rtl/synth/synth_engine.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/input/key_scan.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/input/input_map.v" type="file.verilog" enable="1"/>
         <File path="../../rtl/io/i2s_tx.v" type="file.verilog" enable="1"/>
     </FileList>
 </Project>

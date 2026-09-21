@@ -94,6 +94,25 @@ Test-Suite "tb_synth_engine" @(
     "rtl/synth/voice_alloc.v")
 
 Write-Host ""
+Write-Host "===== 5. P5A 保底按键链路 ====="
+Test-Suite "tb_key_scan" @("sim/tb_key_scan.v", "rtl/input/key_scan.v")
+Test-Suite "tb_input_map" @("sim/tb_input_map.v", "rtl/input/input_map.v")
+Test-Suite "tb_p5_baseline" @(
+    "sim/tb_p5_baseline.v",
+    "rtl/input/key_scan.v",
+    "rtl/input/input_map.v",
+    "rtl/synth/synth_engine.v",
+    "rtl/synth/synth_top.v",
+    "rtl/synth/mixer.v",
+    "rtl/synth/wavetable_arbiter.v",
+    "rtl/synth/wavetable_bank.v",
+    "rtl/synth/wavetable_rom.v",
+    "rtl/synth/voice.v",
+    "rtl/synth/voice_osc.v",
+    "rtl/synth/voice_adsr.v",
+    "rtl/synth/voice_alloc.v")
+
+Write-Host ""
 Write-Host "===== 3. I2S 发送器 ====="
 Test-Suite "tb_i2s_tx" @("sim/tb_i2s_tx.v", "rtl/io/i2s_tx.v")
 
