@@ -173,6 +173,14 @@ LED4 = C 为低      LED5 = C 为高
 
 旋转时哪一对 LED 交替亮灭，就说明哪一个引脚正在输出编码器信号。
 
+如果怀疑某个 FPGA 引脚或杜邦线有问题，可以使用 A/B 专项位流：
+
+```text
+fpga/encoder_ab_test/impl/pnr/encoder_ab_test.fs
+```
+
+该位流只使用 PIN25 和 PIN27，不再使用 PIN26，用于隔离引脚或跳线故障。
+
 如果连“高低对”都不方便判断，还可以用单引脚活动探针：
 
 ```text
