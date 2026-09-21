@@ -11,7 +11,11 @@ Set-Location $root
 New-Item -ItemType Directory -Force sim/out | Out-Null
 
 Write-Host "[1/4] 编译 testbench ..."
-iverilog -I rtl/common -g2012 -o sim/out/tb_voice_osc.vvp sim/tb_voice_osc.v rtl/synth/voice_osc.v rtl/synth/wavetable_rom.v
+iverilog -I rtl/common -g2012 -o sim/out/tb_voice_osc.vvp `
+    sim/tb_voice_osc.v `
+    rtl/synth/synth_top.v rtl/synth/mixer.v `
+    rtl/synth/wavetable_arbiter.v rtl/synth/wavetable_bank.v rtl/synth/wavetable_rom.v `
+    rtl/synth/voice.v rtl/synth/voice_osc.v rtl/synth/voice_adsr.v
 if ($LASTEXITCODE -ne 0) { throw "iverilog 编译失败" }
 
 Write-Host "[2/4] 运行仿真 ..."
@@ -27,7 +31,11 @@ Write-Host "[4/6] 频谱分析 ..."
 if ($LASTEXITCODE -ne 0) { throw "spectrum 分析失败" }
 
 Write-Host "[5/6] 编译 voice 测试台 ..."
-iverilog -I rtl/common -g2012 -o sim/out/tb_voice.vvp sim/tb_voice.v rtl/synth/voice.v rtl/synth/voice_osc.v rtl/synth/wavetable_rom.v rtl/synth/voice_adsr.v
+iverilog -I rtl/common -g2012 -o sim/out/tb_voice.vvp `
+    sim/tb_voice.v `
+    rtl/synth/synth_top.v rtl/synth/mixer.v `
+    rtl/synth/wavetable_arbiter.v rtl/synth/wavetable_bank.v rtl/synth/wavetable_rom.v `
+    rtl/synth/voice.v rtl/synth/voice_osc.v rtl/synth/voice_adsr.v
 if ($LASTEXITCODE -ne 0) { throw "iverilog 编译 tb_voice 失败" }
 
 Write-Host "[6/6] 运行 voice 测试并检查 ADSR 四段 ..."

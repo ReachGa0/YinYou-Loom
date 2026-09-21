@@ -66,6 +66,18 @@ foreach ($d in 15, 5, 30) {
 
 Test-Suite "tb_frac_div" @("sim/tb_frac_div.v", "rtl/common/frac_div.v")
 
+Test-Suite "tb_wavetable_arbiter_4" @(
+    "sim/tb_wavetable_arbiter.v",
+    "rtl/synth/wavetable_arbiter.v",
+    "rtl/synth/wavetable_bank.v",
+    "rtl/synth/wavetable_rom.v") "-Ptb_wavetable_arbiter.VOICES=4"
+
+Test-Suite "tb_wavetable_arbiter_8" @(
+    "sim/tb_wavetable_arbiter.v",
+    "rtl/synth/wavetable_arbiter.v",
+    "rtl/synth/wavetable_bank.v",
+    "rtl/synth/wavetable_rom.v") "-Ptb_wavetable_arbiter.VOICES=8"
+
 Write-Host ""
 Write-Host "===== 3. I2S 发送器 ====="
 Test-Suite "tb_i2s_tx" @("sim/tb_i2s_tx.v", "rtl/io/i2s_tx.v")

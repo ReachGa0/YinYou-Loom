@@ -38,19 +38,29 @@ module tb_voice_osc;
     wire signed [15:0] sample;
     wire               sample_valid;
 
-    voice_osc #(
+    synth_top #(
+        .VOICES     (1),
         .PHASE_BITS (32),
         .ADDR_BITS  (12),
         .SAMPLE_W   (16),
-        .INIT_FILE  (`WAVETABLE_SINE)
-    ) u_osc (
-        .clk          (clk),
-        .rst_n        (rst_n),
-        .sample_en    (sample_en),
-        .inc          (`INC_440),
-        .run          (run),
-        .sample       (sample),
-        .sample_valid (sample_valid)
+        .LEVEL_W    (16),
+        .INIT_FILE0 (`WAVETABLE_SINE),
+        .INIT_FILE1 (`WAVETABLE_SQUARE)
+    ) u_synth (
+        .clk                (clk),
+        .rst_n              (rst_n),
+        .sample_en          (sample_en),
+        .table_sel          (1'b0),
+        .inc_flat           (`INC_440),
+        .gate_flat          (1'b1),
+        .a_step_flat        (16'd65535),
+        .d_step_flat        (16'd0),
+        .sustain_level_flat (16'd65535),
+        .r_step_flat        (16'd0),
+        .mix_sample         (sample),
+        .scan_done          (sample_valid),
+        .voice_valid        (),
+        .busy_flat          ()
     );
 
     // ---- 采样写文件 ----

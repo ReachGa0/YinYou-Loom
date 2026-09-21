@@ -57,25 +57,29 @@ module tb_voice;
     wire               sample_valid;
     wire               busy;
 
-    voice #(
+    synth_top #(
+        .VOICES     (1),
         .PHASE_BITS (32),
         .ADDR_BITS  (12),
         .SAMPLE_W   (16),
         .LEVEL_W    (16),
-        .INIT_FILE  (`WAVETABLE_SINE)
-    ) u_voice (
-        .clk           (clk),
-        .rst_n         (rst_n),
-        .sample_en     (sample_en),
-        .inc           (`INC_440),
-        .gate          (gate),
-        .a_step        (A_STEP),
-        .d_step        (D_STEP),
-        .sustain_level (SUSTAIN_LV),
-        .r_step        (R_STEP),
-        .sample        (sample),
-        .sample_valid  (sample_valid),
-        .busy          (busy)
+        .INIT_FILE0 (`WAVETABLE_SINE),
+        .INIT_FILE1 (`WAVETABLE_SQUARE)
+    ) u_synth (
+        .clk                (clk),
+        .rst_n              (rst_n),
+        .sample_en          (sample_en),
+        .table_sel          (1'b0),
+        .inc_flat           (`INC_440),
+        .gate_flat          (gate),
+        .a_step_flat        (A_STEP),
+        .d_step_flat        (D_STEP),
+        .sustain_level_flat (SUSTAIN_LV),
+        .r_step_flat        (R_STEP),
+        .mix_sample         (sample),
+        .scan_done          (sample_valid),
+        .voice_valid        (),
+        .busy_flat          (busy)
     );
 
     integer f;

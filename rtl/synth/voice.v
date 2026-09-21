@@ -2,8 +2,7 @@ module voice #(
     parameter PHASE_BITS = 32,
     parameter ADDR_BITS  = 12,
     parameter SAMPLE_W   = 16,
-    parameter LEVEL_W    = 16,
-    parameter INIT_FILE  = "data/wavetables/sine_4096x16.hex"
+    parameter LEVEL_W    = 16
 ) (
     input  wire                       clk,
     input  wire                       rst_n,
@@ -14,6 +13,11 @@ module voice #(
     input  wire [LEVEL_W-1:0]         d_step,
     input  wire [LEVEL_W-1:0]         sustain_level,
     input  wire [LEVEL_W-1:0]         r_step,
+
+    output wire [ADDR_BITS-1:0]       wave_addr,
+    input  wire signed [SAMPLE_W-1:0] wave_sample,
+    input  wire                       wave_valid,
+
     output wire signed [SAMPLE_W-1:0] sample,         // 包络调制后的样本
     output wire                       sample_valid,
     output wire                       busy
@@ -28,14 +32,16 @@ module voice #(
     voice_osc #(
         .PHASE_BITS (PHASE_BITS),
         .ADDR_BITS  (ADDR_BITS),
-        .SAMPLE_W   (SAMPLE_W),
-        .INIT_FILE  (INIT_FILE)
+        .SAMPLE_W   (SAMPLE_W)
     ) u_osc (
         .clk          (clk),
         .rst_n        (rst_n),
         .sample_en    (sample_en),
         .inc          (inc),
         .run          (run),
+        .addr         (wave_addr),
+        .wave_sample  (wave_sample),
+        .wave_valid   (wave_valid),
         .sample       (osc_sample),
         .sample_valid (sample_valid)
     );

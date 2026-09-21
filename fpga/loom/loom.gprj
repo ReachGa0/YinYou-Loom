@@ -12,9 +12,13 @@
         <File path="../../rtl/common/clk_div.v" type="file.verilog" enable="1"/>
         <File path="../../rtl/common/frac_div.v" type="file.verilog" enable="1"/>
         <File path="../../rtl/synth/wavetable_rom.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/synth/wavetable_bank.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/synth/wavetable_arbiter.v" type="file.verilog" enable="1"/>
         <File path="../../rtl/synth/voice_osc.v" type="file.verilog" enable="1"/>
         <File path="../../rtl/synth/voice_adsr.v" type="file.verilog" enable="1"/>
         <File path="../../rtl/synth/voice.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/synth/mixer.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/synth/synth_top.v" type="file.verilog" enable="1"/>
         <File path="../../rtl/io/i2s_tx.v" type="file.verilog" enable="1"/>
     </FileList>
 </Project>
