@@ -173,6 +173,19 @@ LED4 = C 为低      LED5 = C 为高
 
 旋转时哪一对 LED 交替亮灭，就说明哪一个引脚正在输出编码器信号。
 
+如果连“高低对”都不方便判断，还可以用单引脚活动探针：
+
+```text
+fpga/encoder_edge_test/impl/pnr/encoder_edge_test.fs
+```
+
+```text
+LED0：A 发生过边沿，翻转一次
+LED1：B 发生过边沿，翻转一次
+LED2：C 发生过边沿，翻转一次
+LED3/4/5：A/B/C 当前高电平状态
+```
+
 ---
 
 ## 六、经验教训
