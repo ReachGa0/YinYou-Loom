@@ -21,7 +21,7 @@ module tb_mixer;
         .clk               (clk),
         .rst_n             (rst_n),
         .voice_sample_flat (voice_sample_flat),
-        .gate_flat         (gate_flat),
+        .sound_flat        (gate_flat),
         .scan_done         (scan_done),
         .mix_sample        (mix_sample),
         .mix_valid         (mix_valid)
@@ -37,6 +37,13 @@ module tb_mixer;
             scan_done = 1'b0;
             @(posedge mix_valid);
             #1;
+        end
+    endtask
+
+    // 增益带斜坡，计数变化后要等它走到目标值（Q15 全量程约 256 个样本）
+    task settle;
+        begin
+            repeat (400) latch_mix;
         end
     endtask
 
@@ -67,36 +74,54 @@ module tb_mixer;
         // 1 键：原样输出（单路 1000）。
         voice_sample_flat = {16'd0, 16'd0, 16'd0, 16'h03e8};
         gate_flat = 4'b0001;
-        latch_mix;
+        settle;
         check(16'sd1000, "one gate passthrough");
 
         // 2 键：两路各 1000，总和除以 2。
         voice_sample_flat = {16'd0, 16'd0, 16'h03e8, 16'h03e8};
         gate_flat = 4'b0011;
-        latch_mix;
+        settle;
         check(16'sd1000, "two gates halve");
+
+        // 增益斜坡：计数从 1 变到 2 时，输出必须逐样本缓慢变化，不能瞬间跳一半。
+        voice_sample_flat = {16'd0, 16'd0, 16'd0, 16'h03e8};
+        gate_flat = 4'b0001;
+        settle;
+        voice_sample_flat = {16'd0, 16'd0, 16'h03e8, 16'h03e8};
+        gate_flat = 4'b0011;
+        latch_mix;
+        begin : ramp_check
+            reg signed [SAMPLE_W-1:0] s1, s2;
+            s1 = mix_sample;
+            latch_mix;
+            s2 = mix_sample;
+            if ((s1 - s2) > 16) begin
+                $display("FAIL: gain ramps smoothly (got %0d -> %0d)", s1, s2);
+                failures = failures + 1;
+            end
+        end
 
         // 3 键：三路各 1000，使用 21/64 近似除以 3。
         voice_sample_flat = {16'd0, 16'h03e8, 16'h03e8, 16'h03e8};
         gate_flat = 4'b0111;
-        latch_mix;
-        check(16'sd983, "three gates approximately one third");
+        settle;
+        check(16'sd984, "three gates approximately one third");
 
         // 4 键：四路各 1000，总和除以 4。
         voice_sample_flat = {16'h03e8, 16'h03e8, 16'h03e8, 16'h03e8};
         gate_flat = 4'b1111;
-        latch_mix;
+        settle;
         check(16'sd1000, "four gates quarter");
 
         // 归一化后仍应保护极端峰值。
         voice_sample_flat = {16'd0, 16'd0, 16'h7530, 16'h7530};
         gate_flat = 4'b0001;
-        latch_mix;
+        settle;
         check(16'sd32767, "positive saturation");
 
         voice_sample_flat = {16'd0, 16'd0, -16'sd30000, -16'sd30000};
         gate_flat = 4'b0001;
-        latch_mix;
+        settle;
         check(-16'sd32768, "negative saturation");
 
         if (failures == 0)

@@ -172,6 +172,81 @@ module oled_sh1106 #(
         end
     endfunction
 
+    // ------------------------------------------------------------
+    // PATTERN_MODE=3：P6 状态页。indicator_bits 编码：
+    //   [0]   0=演奏 PERF，1=测试 TEST
+    //   [1]   音色 0=SINE，1=SQUARE
+    //   [2]   效果 1=DRY，0=CHORUS
+    //   [5:3] 仍在发声的声部数 0..4
+    // 现有字模只覆盖 / 0-4 与 A B C D E F H I M N O P Q R S T U V X Y，
+    // 没有 5 6 7 8 9 与 G J K L W Z，所以本页用词刻意避开了这些字符。
+    // ------------------------------------------------------------
+    function [7:0] test_status_char;
+        input [2:0] line;
+        input [4:0] pos;
+        input [5:0] bits;
+        reg [7:0] ch;
+        begin
+            ch = 8'h20;
+            if (line == 3'd0) begin          // TEST MODE / PERF MODE
+                case (pos)
+                    4'd0: ch = bits[0] ? 8'h54 : 8'h50; // T / P
+                    4'd1: ch = 8'h45;                   // E
+                    4'd2: ch = bits[0] ? 8'h53 : 8'h52; // S / R
+                    4'd3: ch = bits[0] ? 8'h54 : 8'h46; // T / F
+                    4'd5: ch = 8'h4D;                   // M
+                    4'd6: ch = 8'h4F;                   // O
+                    4'd7: ch = 8'h44;                   // D
+                    4'd8: ch = 8'h45;                   // E
+                    default: ch = 8'h20;
+                endcase
+            end else if (line == 3'd2) begin // VOICE n/4
+                case (pos)
+                    4'd0: ch = 8'h56;                   // V
+                    4'd1: ch = 8'h4F;                   // O
+                    4'd2: ch = 8'h49;                   // I
+                    4'd3: ch = 8'h43;                   // C
+                    4'd4: ch = 8'h45;                   // E
+                    4'd6: ch = 8'h30 + bits[5:3];       // 音数 0..4
+                    4'd7: ch = 8'h2F;                   // /
+                    4'd8: ch = 8'h34;                   // 4
+                    default: ch = 8'h20;
+                endcase
+            end else if (line == 3'd4) begin
+                if (bits[0]) begin                   // 4 NONHARM TONE
+                    case (pos)
+                        4'd0: ch = 8'h34;               // 4
+                        4'd2: ch = 8'h4E;               // N
+                        4'd3: ch = 8'h4F;               // O
+                        4'd4: ch = 8'h4E;               // N
+                        4'd5: ch = 8'h48;               // H
+                        4'd6: ch = 8'h41;               // A
+                        4'd7: ch = 8'h52;               // R
+                        4'd8: ch = 8'h4D;               // M
+                        4'd10: ch = 8'h54;              // T
+                        4'd11: ch = 8'h4F;              // O
+                        4'd12: ch = 8'h4E;              // N
+                        4'd13: ch = 8'h45;              // E
+                        default: ch = 8'h20;
+                    endcase
+                end else begin                       // SINE DRY / SQUA CHOR
+                    case (pos)
+                        4'd0: ch = 8'h53;               // S
+                        4'd1: ch = bits[1] ? 8'h51 : 8'h49; // Q / I
+                        4'd2: ch = bits[1] ? 8'h55 : 8'h4E; // U / N
+                        4'd3: ch = bits[1] ? 8'h41 : 8'h45; // A / E
+                        4'd5: ch = bits[2] ? 8'h44 : 8'h43; // D / C
+                        4'd6: ch = bits[2] ? 8'h52 : 8'h48; // R / H
+                        4'd7: ch = bits[2] ? 8'h59 : 8'h4F; // Y / O
+                        4'd8: ch = bits[2] ? 8'h20 : 8'h52; // sp / R
+                        default: ch = 8'h20;
+                    endcase
+                end
+            end
+            test_status_char = ch;
+        end
+    endfunction
+
     // 标准 5x7 点阵的 5 个列字节；每个列字节的 bit0 是最上面一行。
     function [6:0] glyph_col;
         input [7:0] ch;
@@ -267,7 +342,9 @@ module oled_sh1106 #(
                     char_col = (cx - 8'd4) % 6;
                     char_pos = (cx - 8'd4) / 6;
                     if (char_col < 3'd5) begin
-                        ch      = status_char(pg[2:0], char_pos[4:0], bits);
+                        ch      = (PATTERN_MODE == 3)
+                                ? test_status_char(pg[2:0], char_pos[4:0], bits)
+                                : status_char(pg[2:0], char_pos[4:0], bits);
                         glyph   = glyph_col(ch, char_col);
                         b       = {1'b0, glyph};
                     end

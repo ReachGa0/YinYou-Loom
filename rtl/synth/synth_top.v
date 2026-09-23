@@ -98,7 +98,9 @@ module synth_top #(
         .clk               (clk),
         .rst_n             (rst_n),
         .voice_sample_flat (voice_sample_flat),
-        .gate_flat         (gate_flat),
+        // 归一化按"仍在发声"计数：gate 或 ADSR 释放未结束都算在响，
+        // 避免最后一音松开时系数突变产生"咔"声。
+        .sound_flat        (gate_flat | busy_flat),
         .scan_done         (arb_scan_done),
         .mix_sample        (mix_sample),
         .mix_valid         (mix_valid)
