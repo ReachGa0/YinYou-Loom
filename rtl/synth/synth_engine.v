@@ -34,7 +34,26 @@ module synth_engine #(
     output wire [VOICES-1:0]             voice_busy
 );
     wire [VOICES*PHASE_BITS-1:0] inc_flat;
+    wire [VOICES*16-1:0]         gain_flat;
     wire [VOICES-1:0]            gate_flat;
+
+    // A 加权近似补偿表，按 C4 归一化并用 1/32 分辨率量化。
+    // 这些系数在 voice 中用加减和移位实现，避免新增乘法器拖长时序。
+    function [15:0] gain_for_note;
+        input [NOTE_ID_W-1:0] id;
+        begin
+            case (id)
+                7'd60: gain_for_note = 16'd32768;  // C4, 1.0000
+                7'd64: gain_for_note = 16'd25600;  // E4, 25/32 = 0.78125
+                7'd67: gain_for_note = 16'd22528;  // G4, 11/16 = 0.68750
+                7'd69: gain_for_note = 16'd20480;  // A4, 5/8  = 0.62500
+                7'd71: gain_for_note = 16'd18432;  // B4, 9/16 = 0.56250
+                default: gain_for_note = 16'd32768;
+            endcase
+        end
+    endfunction
+
+    wire [15:0] note_gain = gain_for_note(note_id);
 
     localparam [VOICES*LEVEL_W-1:0] A_STEP_FLAT =
         {VOICES{16'd273}};
@@ -56,8 +75,10 @@ module synth_engine #(
         .note_off        (note_off),
         .note_id         (note_id),
         .note_inc        (note_inc),
+        .note_gain       (note_gain),
         .voice_busy      (voice_busy),
         .voice_inc_flat  (inc_flat),
+        .voice_gain_flat (gain_flat),
         .voice_gate_flat (gate_flat),
         .voice_active    (voice_active)
     );
@@ -81,6 +102,7 @@ module synth_engine #(
         .d_step_flat        (D_STEP_FLAT),
         .sustain_level_flat (SUSTAIN_FLAT),
         .r_step_flat        (R_STEP_FLAT),
+        .gain_flat          (gain_flat),
         .mix_sample         (mix_sample),
         .scan_done          (scan_done),
         .voice_valid        (),

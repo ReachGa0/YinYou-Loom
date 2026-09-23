@@ -13,7 +13,7 @@ module oled_sh1106 #(
     parameter CLK_HZ     = 27_000_000,
     parameter SCL_HZ     = 100_000,
     parameter POR_CYCLES = 27_000_000 / 5,     // 上电等待（默认约 200ms）
-    parameter PATTERN_MODE = 0                 // 0=原测试图案，1=六格调试图案
+    parameter PATTERN_MODE = 0                 // 0=原测试图案，1=六格调试图案，2=状态文字
 ) (
     input  wire clk,
     input  wire rst_n,
@@ -107,6 +107,111 @@ module oled_sh1106 #(
     endfunction
 
     // ------------------------------------------------------------
+    // PATTERN_MODE=2：小型状态页。indicator_bits 编码：
+    //   [0]   timbre：0=SINE，1=SQUARE
+    //   [1]   bypass：0=CHORUS，1=DRY
+    //   [5:2] 当前按键数 0..4
+    // ------------------------------------------------------------
+    function [7:0] status_char;
+        input [2:0] line;
+        input [4:0] pos;
+        input [5:0] bits;
+        reg [7:0] ch;
+        begin
+            ch = 8'h20;
+            case (line)
+                3'd0: begin // TIMBRE ...
+                    case (pos)
+                        4'd0: ch = 8'h54; // T
+                        4'd1: ch = 8'h49; // I
+                        4'd2: ch = 8'h4D; // M
+                        4'd3: ch = 8'h42; // B
+                        4'd4: ch = 8'h52; // R
+                        4'd5: ch = 8'h45; // E
+                        4'd6: ch = 8'h20;
+                        4'd7: ch = bits[0] ? 8'h53 : 8'h53; // S
+                        4'd8: ch = bits[0] ? 8'h51 : 8'h49; // Q / I
+                        4'd9: ch = bits[0] ? 8'h55 : 8'h4E; // U / N
+                        4'd10: ch = bits[0] ? 8'h41 : 8'h45; // A / E
+                        4'd11: ch = bits[0] ? 8'h52 : 8'h20; // R / space
+                        4'd12: ch = bits[0] ? 8'h45 : 8'h20; // E / space
+                        default: ch = 8'h20;
+                    endcase
+                end
+                3'd2: begin // FX ...
+                    case (pos)
+                        4'd0: ch = 8'h46; // F
+                        4'd1: ch = 8'h58; // X
+                        4'd2: ch = 8'h20;
+                        4'd3: ch = bits[1] ? 8'h44 : 8'h43; // D / C
+                        4'd4: ch = bits[1] ? 8'h52 : 8'h48; // R / H
+                        4'd5: ch = bits[1] ? 8'h59 : 8'h4F; // Y / O
+                        4'd6: ch = bits[1] ? 8'h20 : 8'h52; // space / R
+                        4'd7: ch = bits[1] ? 8'h20 : 8'h55; // space / U
+                        4'd8: ch = bits[1] ? 8'h20 : 8'h53; // space / S
+                        default: ch = 8'h20;
+                    endcase
+                end
+                3'd4: begin // VOICE n/4
+                    case (pos)
+                        4'd0: ch = 8'h56; // V
+                        4'd1: ch = 8'h4F; // O
+                        4'd2: ch = 8'h49; // I
+                        4'd3: ch = 8'h43; // C
+                        4'd4: ch = 8'h45; // E
+                        4'd5: ch = 8'h20;
+                        4'd6: ch = 8'h30 + bits[5:2];
+                        4'd7: ch = 8'h2F; // /
+                        4'd8: ch = 8'h34; // 4
+                        default: ch = 8'h20;
+                    endcase
+                end
+                default: ch = 8'h20;
+            endcase
+            status_char = ch;
+        end
+    endfunction
+
+    // 标准 5x7 点阵的 5 个列字节；每个列字节的 bit0 是最上面一行。
+    function [6:0] glyph_col;
+        input [7:0] ch;
+        input [2:0] col;
+        reg [6:0] g;
+        begin
+            case (ch)
+                8'h41: case (col) 0:g=7'h7E; 1:g=7'h11; 2:g=7'h11; 3:g=7'h11; default:g=7'h7E; endcase // A
+                8'h42: case (col) 0:g=7'h7F; 1:g=7'h49; 2:g=7'h49; 3:g=7'h49; default:g=7'h36; endcase // B
+                8'h43: case (col) 0:g=7'h3E; 1:g=7'h41; 2:g=7'h41; 3:g=7'h41; default:g=7'h22; endcase // C
+                8'h44: case (col) 0:g=7'h7F; 1:g=7'h41; 2:g=7'h41; 3:g=7'h22; default:g=7'h1C; endcase // D
+                8'h45: case (col) 0:g=7'h7F; 1:g=7'h49; 2:g=7'h49; 3:g=7'h49; default:g=7'h41; endcase // E
+                8'h46: case (col) 0:g=7'h7F; 1:g=7'h09; 2:g=7'h09; 3:g=7'h09; default:g=7'h01; endcase // F
+                8'h48: case (col) 0:g=7'h7F; 1:g=7'h08; 2:g=7'h08; 3:g=7'h08; default:g=7'h7F; endcase // H
+                8'h49: case (col) 0:g=7'h00; 1:g=7'h41; 2:g=7'h7F; 3:g=7'h41; default:g=7'h00; endcase // I
+                8'h4D: case (col) 0:g=7'h7F; 1:g=7'h02; 2:g=7'h0C; 3:g=7'h02; default:g=7'h7F; endcase // M
+                8'h4E: case (col) 0:g=7'h7F; 1:g=7'h04; 2:g=7'h08; 3:g=7'h10; default:g=7'h7F; endcase // N
+                8'h4F: case (col) 0:g=7'h3E; 1:g=7'h41; 2:g=7'h41; 3:g=7'h41; default:g=7'h3E; endcase // O
+                8'h50: case (col) 0:g=7'h7F; 1:g=7'h09; 2:g=7'h09; 3:g=7'h09; default:g=7'h06; endcase // P
+                8'h51: case (col) 0:g=7'h3E; 1:g=7'h41; 2:g=7'h51; 3:g=7'h21; default:g=7'h5E; endcase // Q
+                8'h52: case (col) 0:g=7'h7F; 1:g=7'h09; 2:g=7'h19; 3:g=7'h29; default:g=7'h46; endcase // R
+                8'h53: case (col) 0:g=7'h46; 1:g=7'h49; 2:g=7'h49; 3:g=7'h49; default:g=7'h31; endcase // S
+                8'h54: case (col) 0:g=7'h01; 1:g=7'h01; 2:g=7'h7F; 3:g=7'h01; default:g=7'h01; endcase // T
+                8'h55: case (col) 0:g=7'h3F; 1:g=7'h40; 2:g=7'h40; 3:g=7'h40; default:g=7'h3F; endcase // U
+                8'h56: case (col) 0:g=7'h1F; 1:g=7'h20; 2:g=7'h40; 3:g=7'h20; default:g=7'h1F; endcase // V
+                8'h58: case (col) 0:g=7'h63; 1:g=7'h14; 2:g=7'h08; 3:g=7'h14; default:g=7'h63; endcase // X
+                8'h59: case (col) 0:g=7'h07; 1:g=7'h08; 2:g=7'h70; 3:g=7'h08; default:g=7'h07; endcase // Y
+                8'h30: case (col) 0:g=7'h3E; 1:g=7'h51; 2:g=7'h49; 3:g=7'h45; default:g=7'h3E; endcase // 0
+                8'h31: case (col) 0:g=7'h00; 1:g=7'h42; 2:g=7'h7F; 3:g=7'h40; default:g=7'h00; endcase // 1
+                8'h32: case (col) 0:g=7'h42; 1:g=7'h61; 2:g=7'h51; 3:g=7'h49; default:g=7'h46; endcase // 2
+                8'h33: case (col) 0:g=7'h21; 1:g=7'h41; 2:g=7'h45; 3:g=7'h4B; default:g=7'h31; endcase // 3
+                8'h34: case (col) 0:g=7'h18; 1:g=7'h14; 2:g=7'h12; 3:g=7'h7F; default:g=7'h10; endcase // 4
+                8'h2F: case (col) 0:g=7'h20; 1:g=7'h10; 2:g=7'h08; 3:g=7'h04; default:g=7'h02; endcase // /
+                default: g = 7'h00;
+            endcase
+            glyph_col = g;
+        end
+    endfunction
+
+    // ------------------------------------------------------------
     // 测试图案：2 像素边框 + 中央 7 段式数字 3
     // ------------------------------------------------------------
     function [7:0] pix_byte;
@@ -114,6 +219,10 @@ module oled_sh1106 #(
         input [7:0] cx;
         input [5:0] bits;
         reg   [7:0] b;
+        reg   [2:0] char_col;
+        integer char_pos;
+        reg   [7:0] ch;
+        reg   [6:0] glyph;
         integer block;
         begin
             b = 8'h00;
@@ -146,12 +255,23 @@ module oled_sh1106 #(
                         ((cx >= 8'd40 && cx <= 8'd87) ? 8'hFC : 8'h00);
                     default: b = b;
                 endcase
-            end else begin
+            end else if (PATTERN_MODE == 1) begin
                 // 六格调试图案：每格约 19 像素宽，bit=1 时填充。
                 for (block = 0; block < 6; block = block + 1)
                     if (cx >= block*21 && cx <= block*21 + 18 &&
                         pg >= 4'd1 && pg <= 4'd6)
                         b = bits[block] ? 8'hFF : 8'h00;
+            end else begin
+                // 状态文字：page 0/2/4 各承载一整行 5x7 字模。
+                if ((pg == 4'd0 || pg == 4'd2 || pg == 4'd4) && cx >= 8'd4) begin
+                    char_col = (cx - 8'd4) % 6;
+                    char_pos = (cx - 8'd4) / 6;
+                    if (char_col < 3'd5) begin
+                        ch      = status_char(pg[2:0], char_pos[4:0], bits);
+                        glyph   = glyph_col(ch, char_col);
+                        b       = {1'b0, glyph};
+                    end
+                end
             end
             pix_byte = b;
         end

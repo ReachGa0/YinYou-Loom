@@ -21,13 +21,13 @@ function Test-Suite {
     param(
         [string]   $Name,
         [string[]] $Sources,
-        [string]   $Extra = ""
+        [string[]] $Extra = @()
     )
     $script:total++
     $vvp = "sim/out/$Name.vvp"
 
     $argv = @("-g2012")
-    if ($Extra -ne "") { $argv += $Extra }
+    if ($Extra.Count -gt 0) { $argv += $Extra }
     $argv += @("-o", $vvp)
     $argv += $Sources
 
@@ -92,9 +92,10 @@ Test-Suite "tb_synth_engine" @(
     "rtl/synth/voice_osc.v",
     "rtl/synth/voice_adsr.v",
     "rtl/synth/voice_alloc.v")
+Test-Suite "tb_chorus" @("sim/tb_chorus.v", "rtl/synth/chorus.v")
 
 Write-Host ""
-Write-Host "===== 5. P5A 保底按键链路 ====="
+Write-Host "===== 5. P5 交互层（P5A 按键保底 / P5C 超声波）====="
 Test-Suite "tb_key_scan" @("sim/tb_key_scan.v", "rtl/input/key_scan.v")
 Test-Suite "tb_input_map" @("sim/tb_input_map.v", "rtl/input/input_map.v")
 Test-Suite "tb_rotary_decode" @(
@@ -116,6 +117,8 @@ Test-Suite "tb_p5_baseline" @(
     "rtl/synth/voice_adsr.v",
     "rtl/synth/voice_alloc.v")
 
+Test-Suite "tb_sonar_range" @("sim/tb_sonar_range.v", "rtl/input/sonar_range.v")
+
 Write-Host ""
 Write-Host "===== 3. I2S 发送器 ====="
 Test-Suite "tb_i2s_tx" @("sim/tb_i2s_tx.v", "rtl/io/i2s_tx.v")
@@ -132,6 +135,14 @@ Test-Suite "tb_oled_sh1106" @(
 Test-Suite "tb_oled_ssd1306" @(
     "sim/tb_oled_sh1106.v", "sim/i2c_slave_model.v",
     "rtl/display/oled_sh1106.v", "rtl/io/i2c_master.v") "-Ptb_oled_sh1106.MODE=1"
+
+Test-Suite "tb_oled_status_square" @(
+    "sim/tb_oled_status.v", "sim/i2c_slave_model.v",
+    "rtl/display/oled_sh1106.v", "rtl/io/i2c_master.v") "-Ptb_oled_status.COUNT=3"
+
+Test-Suite "tb_oled_status_dry" @(
+    "sim/tb_oled_status.v", "sim/i2c_slave_model.v",
+    "rtl/display/oled_sh1106.v", "rtl/io/i2c_master.v") @("-Ptb_oled_status.COUNT=1", "-Ptb_oled_status.TIMBRE=0", "-Ptb_oled_status.BYPASS=1")
 
 Write-Host ""
 Write-Host "========================================"

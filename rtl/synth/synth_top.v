@@ -15,6 +15,7 @@ module synth_top #(
     parameter ADDR_BITS  = 12,
     parameter SAMPLE_W   = 16,
     parameter LEVEL_W    = 16,
+    parameter GAIN_W     = 16,
     parameter INIT_FILE0 = "data/wavetables/sine_4096x16.hex",
     parameter INIT_FILE1 = "data/wavetables/square_4096x16.hex"
 ) (
@@ -29,6 +30,7 @@ module synth_top #(
     input  wire [VOICES*LEVEL_W-1:0]         d_step_flat,
     input  wire [VOICES*LEVEL_W-1:0]         sustain_level_flat,
     input  wire [VOICES*LEVEL_W-1:0]         r_step_flat,
+    input  wire [VOICES*GAIN_W-1:0]          gain_flat,
 
     output wire signed [SAMPLE_W-1:0]        mix_sample,
     output wire                              scan_done,
@@ -39,6 +41,8 @@ module synth_top #(
     wire [VOICES*SAMPLE_W-1:0]   wave_sample_flat;
     wire [VOICES-1:0]            wave_valid_flat;
     wire [VOICES*SAMPLE_W-1:0]   voice_sample_flat;
+    wire                         arb_scan_done;
+    wire                         mix_valid;
 
     wavetable_arbiter #(
         .VOICES    (VOICES),
@@ -54,7 +58,7 @@ module synth_top #(
         .wave_addr_flat   (wave_addr_flat),
         .wave_sample_flat (wave_sample_flat),
         .wave_valid       (wave_valid_flat),
-        .scan_done        (scan_done)
+        .scan_done        (arb_scan_done)
     );
 
     genvar i;
@@ -64,7 +68,8 @@ module synth_top #(
                 .PHASE_BITS (PHASE_BITS),
                 .ADDR_BITS  (ADDR_BITS),
                 .SAMPLE_W   (SAMPLE_W),
-                .LEVEL_W    (LEVEL_W)
+                .LEVEL_W    (LEVEL_W),
+                .GAIN_W     (GAIN_W)
             ) u_voice (
                 .clk           (clk),
                 .rst_n         (rst_n),
@@ -75,6 +80,7 @@ module synth_top #(
                 .d_step        (d_step_flat[i*LEVEL_W +: LEVEL_W]),
                 .sustain_level (sustain_level_flat[i*LEVEL_W +: LEVEL_W]),
                 .r_step        (r_step_flat[i*LEVEL_W +: LEVEL_W]),
+                .gain_q15      (gain_flat[i*GAIN_W +: GAIN_W]),
                 .wave_addr     (wave_addr_flat[i*ADDR_BITS +: ADDR_BITS]),
                 .wave_sample   (wave_sample_flat[i*SAMPLE_W +: SAMPLE_W]),
                 .wave_valid    (wave_valid_flat[i]),
@@ -92,7 +98,11 @@ module synth_top #(
         .clk               (clk),
         .rst_n             (rst_n),
         .voice_sample_flat (voice_sample_flat),
-        .scan_done         (scan_done),
-        .mix_sample        (mix_sample)
+        .gate_flat         (gate_flat),
+        .scan_done         (arb_scan_done),
+        .mix_sample        (mix_sample),
+        .mix_valid         (mix_valid)
     );
+
+    assign scan_done = mix_valid;
 endmodule

@@ -54,7 +54,7 @@ module p5a_demo_top (
 
     key_scan #(
         .KEYS            (4),
-        .DEBOUNCE_CYCLES (72000)
+        .DEBOUNCE_CYCLES (720000)  // 10 ms @ 72 MHz
     ) u_keys (
         .clk           (clk_sys),
         .rst_n         (rst_n),
@@ -84,7 +84,8 @@ module p5a_demo_top (
         .SAMPLE_W      (16),
         .LEVEL_W       (16),
         .NOTE_ID_W     (7),
-        .SUSTAIN_LEVEL (16'd8192),
+        // 与 P3 单音同幅度的调试增益；四键齐按由 mixer 饱和限幅保护。
+        .SUSTAIN_LEVEL (16'd32768),
         .INIT_FILE0    ("../../data/wavetables/sine_4096x16.hex"),
         .INIT_FILE1    ("../../data/wavetables/square_4096x16.hex")
     ) u_engine (

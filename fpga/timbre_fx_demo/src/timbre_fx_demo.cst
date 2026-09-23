@@ -1,0 +1,52 @@
+// timbre_fx_demo pin constraints
+// Device: GW2AR-LV18QN88C8/I7
+
+// Board 27 MHz oscillator
+IO_LOC "clk" 4;
+IO_PORT "clk" PULL_MODE=UP IO_TYPE=LVCMOS33;
+
+// Performance keys: C4/E4/G4/B4, active low
+IO_LOC "key_n[0]" 28;
+IO_PORT "key_n[0]" PULL_MODE=UP IO_TYPE=LVCMOS33;
+IO_LOC "key_n[1]" 29;
+IO_PORT "key_n[1]" PULL_MODE=UP IO_TYPE=LVCMOS33;
+IO_LOC "key_n[2]" 30;
+IO_PORT "key_n[2]" PULL_MODE=UP IO_TYPE=LVCMOS33;
+IO_LOC "key_n[3]" 31;
+IO_PORT "key_n[3]" PULL_MODE=UP IO_TYPE=LVCMOS33;
+
+// On-board control keys, active low
+IO_LOC "key_timbre_n" 88;
+IO_PORT "key_timbre_n" PULL_MODE=UP IO_TYPE=LVCMOS33;
+IO_LOC "key_fx_n" 87;
+IO_PORT "key_fx_n" PULL_MODE=UP IO_TYPE=LVCMOS33;
+
+// Audio amplifier and I2S
+IO_LOC "pa_en" 51;
+IO_PORT "pa_en" PULL_MODE=UP DRIVE=8 IO_TYPE=LVCMOS33;
+IO_LOC "i2s_din" 54;
+IO_PORT "i2s_din" PULL_MODE=UP DRIVE=8 IO_TYPE=LVCMOS33;
+IO_LOC "i2s_lrck" 55;
+IO_PORT "i2s_lrck" PULL_MODE=UP DRIVE=8 IO_TYPE=LVCMOS33;
+IO_LOC "i2s_bclk" 56;
+IO_PORT "i2s_bclk" PULL_MODE=UP DRIVE=8 IO_TYPE=LVCMOS33;
+
+// SH1106 I2C display
+IO_LOC "oled_scl" 71;
+IO_PORT "oled_scl" PULL_MODE=UP DRIVE=8 IO_TYPE=LVCMOS33;
+IO_LOC "oled_sda" 72;
+IO_PORT "oled_sda" PULL_MODE=UP DRIVE=8 IO_TYPE=LVCMOS33;
+
+// On-board LEDs, active low
+IO_LOC "led_n[0]" 15;
+IO_PORT "led_n[0]" PULL_MODE=UP DRIVE=8 IO_TYPE=LVCMOS33;
+IO_LOC "led_n[1]" 16;
+IO_PORT "led_n[1]" PULL_MODE=UP DRIVE=8 IO_TYPE=LVCMOS33;
+IO_LOC "led_n[2]" 17;
+IO_PORT "led_n[2]" PULL_MODE=UP DRIVE=8 IO_TYPE=LVCMOS33;
+IO_LOC "led_n[3]" 18;
+IO_PORT "led_n[3]" PULL_MODE=UP DRIVE=8 IO_TYPE=LVCMOS33;
+IO_LOC "led_n[4]" 19;
+IO_PORT "led_n[4]" PULL_MODE=UP DRIVE=8 IO_TYPE=LVCMOS33;
+IO_LOC "led_n[5]" 20;
+IO_PORT "led_n[5]" PULL_MODE=UP DRIVE=8 IO_TYPE=LVCMOS33;

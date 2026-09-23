@@ -36,12 +36,16 @@ def make_triangle():
 
 
 def make_square():
+    # Square waves concentrate energy in odd harmonics that sit in the
+    # sensitive band of the small speaker, so match perceived loudness rather
+    # than peak amplitude. The master volume can compensate overall level.
+    level = round(AMP / 4)
     table = []
     for i in range(N):
         if i < N // 2:
-            value = AMP
+            value = level
         else:
-            value = -AMP
+            value = -level
         table.append(value)
     return table
 

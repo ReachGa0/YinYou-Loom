@@ -11,8 +11,10 @@ module tb_voice_alloc;
     reg                         note_off;
     reg  [NOTE_ID_W-1:0]        note_id;
     reg  [PHASE_BITS-1:0]       note_inc;
+    reg  [15:0]                 note_gain;
     reg  [VOICES-1:0]           voice_busy;
     wire [VOICES*PHASE_BITS-1:0] voice_inc_flat;
+    wire [VOICES*16-1:0]        voice_gain_flat;
     wire [VOICES-1:0]           voice_gate_flat;
     wire [VOICES-1:0]           voice_active;
 
@@ -29,8 +31,10 @@ module tb_voice_alloc;
         .note_off        (note_off),
         .note_id         (note_id),
         .note_inc        (note_inc),
+        .note_gain       (note_gain),
         .voice_busy      (voice_busy),
         .voice_inc_flat  (voice_inc_flat),
+        .voice_gain_flat (voice_gain_flat),
         .voice_gate_flat (voice_gate_flat),
         .voice_active    (voice_active)
     );
@@ -40,11 +44,13 @@ module tb_voice_alloc;
     task press_note;
         input [NOTE_ID_W-1:0] id;
         input [PHASE_BITS-1:0] inc;
+        input [15:0] gain;
         begin
             @(negedge clk);
             note_on  = 1'b1;
             note_id  = id;
             note_inc = inc;
+            note_gain = gain;
             @(negedge clk);
             note_on  = 1'b0;
             @(negedge clk);
@@ -83,6 +89,7 @@ module tb_voice_alloc;
         note_off    = 1'b0;
         note_id     = 7'd0;
         note_inc    = 32'd0;
+        note_gain   = 16'd32768;
         voice_busy  = 4'd0;
         failures    = 0;
 
@@ -90,10 +97,10 @@ module tb_voice_alloc;
         rst_n = 1'b1;
         repeat (2) @(posedge clk);
 
-        press_note(7'd60, 32'h00000001);
-        press_note(7'd64, 32'h00000002);
-        press_note(7'd67, 32'h00000003);
-        press_note(7'd72, 32'h00000004);
+        press_note(7'd60, 32'h00000001, 16'd32768);
+        press_note(7'd64, 32'h00000002, 16'd26066);
+        press_note(7'd67, 32'h00000003, 16'd22320);
+        press_note(7'd72, 32'h00000004, 16'd30000);
 
         check(voice_active === 4'b1111, "four notes should occupy four voices");
         check(voice_gate_flat === 4'b1111, "four gates should be active");
@@ -101,12 +108,20 @@ module tb_voice_alloc;
             "voice 0 inc mismatch");
         check(voice_inc_flat[3*PHASE_BITS +: PHASE_BITS] === 32'h00000004,
             "voice 3 inc mismatch");
+        check(voice_gain_flat[0*16 +: 16] === 16'd32768,
+            "voice 0 gain mismatch");
+        check(voice_gain_flat[1*16 +: 16] === 16'd26066,
+            "voice 1 gain mismatch");
+        check(voice_gain_flat[2*16 +: 16] === 16'd22320,
+            "voice 2 gain mismatch");
 
         voice_busy = 4'b1111;
-        press_note(7'd79, 32'h00000005);
+        press_note(7'd79, 32'h00000005, 16'd12345);
         check(voice_active === 4'b1111, "all voices should remain active after steal");
         check(voice_inc_flat[0*PHASE_BITS +: PHASE_BITS] === 32'h00000005,
             "steal pointer should reuse voice 0");
+        check(voice_gain_flat[0*16 +: 16] === 16'd12345,
+            "steal pointer should update voice gain");
 
         voice_busy = 4'b0000;
         release_note(7'd64);

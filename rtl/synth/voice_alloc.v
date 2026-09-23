@@ -9,7 +9,8 @@
 module voice_alloc #(
     parameter VOICES    = 4,
     parameter PHASE_BITS = 32,
-    parameter NOTE_ID_W  = 7
+    parameter NOTE_ID_W  = 7,
+    parameter GAIN_W     = 16
 ) (
     input  wire                         clk,
     input  wire                         rst_n,
@@ -17,9 +18,11 @@ module voice_alloc #(
     input  wire                         note_off,
     input  wire [NOTE_ID_W-1:0]         note_id,
     input  wire [PHASE_BITS-1:0]        note_inc,
+    input  wire [GAIN_W-1:0]            note_gain,
     input  wire [VOICES-1:0]            voice_busy,
 
     output reg  [VOICES*PHASE_BITS-1:0] voice_inc_flat,
+    output reg  [VOICES*GAIN_W-1:0]     voice_gain_flat,
     output reg  [VOICES-1:0]            voice_gate_flat,
     output reg  [VOICES-1:0]            voice_active
 );
@@ -52,6 +55,7 @@ module voice_alloc #(
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             voice_inc_flat  <= {VOICES*PHASE_BITS{1'b0}};
+            voice_gain_flat <= {VOICES*GAIN_W{1'b0}};
             voice_gate_flat <= {VOICES{1'b0}};
             voice_active    <= {VOICES{1'b0}};
             steal_ptr       <= {IDX_W{1'b0}};
@@ -68,12 +72,14 @@ module voice_alloc #(
                 voice_gate_flat[alloc_idx] <= 1'b1;
                 voice_active[alloc_idx]    <= 1'b1;
                 voice_inc_flat[alloc_idx*PHASE_BITS +: PHASE_BITS] <= note_inc;
+                voice_gain_flat[alloc_idx*GAIN_W +: GAIN_W] <= note_gain;
                 note_id_reg[alloc_idx]     <= note_id;
                 steal_ptr <= alloc_idx + 1'b1;
             end else begin
                 voice_gate_flat[steal_ptr] <= 1'b1;
                 voice_active[steal_ptr]    <= 1'b1;
                 voice_inc_flat[steal_ptr*PHASE_BITS +: PHASE_BITS] <= note_inc;
+                voice_gain_flat[steal_ptr*GAIN_W +: GAIN_W] <= note_gain;
                 note_id_reg[steal_ptr]     <= note_id;
                 steal_ptr <= steal_ptr + 1'b1;
             end

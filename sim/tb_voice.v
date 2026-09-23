@@ -76,6 +76,7 @@ module tb_voice;
         .d_step_flat        (D_STEP),
         .sustain_level_flat (SUSTAIN_LV),
         .r_step_flat        (R_STEP),
+        .gain_flat          (16'd32768),
         .mix_sample         (sample),
         .scan_done          (sample_valid),
         .voice_valid        (),

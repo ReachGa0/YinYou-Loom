@@ -79,6 +79,7 @@ module loom_top (
         .d_step_flat        (16'd20),
         .sustain_level_flat (16'd32768),
         .r_step_flat        (16'd20),
+        .gain_flat          (16'd32768),
         .mix_sample         (sample),
         .scan_done          (),
         .voice_valid        (voice_valid),

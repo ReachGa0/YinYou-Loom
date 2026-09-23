@@ -9,7 +9,8 @@
 
 module key_scan #(
     parameter KEYS            = 4,
-    parameter DEBOUNCE_CYCLES = 72000
+    // 72 MHz 下的默认 10 ms 窗口；其他时钟域必须按 clk 频率覆盖该参数。
+    parameter DEBOUNCE_CYCLES = 720000
 ) (
     input  wire             clk,
     input  wire             rst_n,

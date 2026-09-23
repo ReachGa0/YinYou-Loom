@@ -57,6 +57,7 @@ module tb_voice_osc;
         .d_step_flat        (16'd0),
         .sustain_level_flat (16'd65535),
         .r_step_flat        (16'd0),
+        .gain_flat          (16'd32768),
         .mix_sample         (sample),
         .scan_done          (sample_valid),
         .voice_valid        (),
