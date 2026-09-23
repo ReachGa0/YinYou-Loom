@@ -134,6 +134,30 @@ void I2C1_ER_IRQHandler(void)   { HAL_I2C_ER_IRQHandler(&hi2c1); }
 
 ---
 
+### 音色 / 合唱 demo 中的 OLED 状态页
+
+2026-09-23 在独立工程 `fpga/timbre_fx_demo/` 中复用了这块 1.3 寸 SH1106，
+用于显示当前音色、效果器和按键数。接线不变：
+
+```text
+OLED SCL -> PIN71
+OLED SDA -> PIN72
+```
+
+`rtl/display/oled_sh1106.v` 的 `PATTERN_MODE=2` 显示：
+
+```text
+TIMBRE SINE / SQUARE
+FX     DRY / CHORUS
+VOICE  n/4
+```
+
+其中 `indicator_bits[0]` 表示音色，`indicator_bits[1]` 表示效果旁路，
+`indicator_bits[5:2]` 表示当前按下的按键数。该状态页已通过
+`sim/tb_oled_status.v` 逐字节仿真，并在 `timbre_fx_demo` 位流中与音频逻辑一起运行。
+
+---
+
 ## 五、后续清理项
 
 1. `key_n` 当前未参与逻辑，会产生未使用输入警告；后续要么移除顶层端口和 `.cst` 约束，要么改成“重新初始化”按键。
@@ -141,6 +165,10 @@ void I2C1_ER_IRQHandler(void)   { HAL_I2C_ER_IRQHandler(&hi2c1); }
 3. OLED 相关实验改动已统一整理提交。
 
 ### EC11 + OLED 联合调试
+
+> 本段保留的是早期引脚确认实验。当前产品实物模块为
+> `A / C / B / VCC / GND`，没有独立按压开关，`C` 应接 `GND`。
+> 旧测试顶层 `encoder_test_top.v` 把 `enc_c` 当作 `enc_sw_n`，不能用于当前模块的正式接线。
 
 用于确认五引脚 EC11 模块的实际引脚行为：
 
