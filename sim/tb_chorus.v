@@ -47,8 +47,15 @@ module tb_chorus;
     task check_output;
         input [15:0] expected;
         input [8*24-1:0] label;
+        integer guard;
         begin
-            repeat (2) @(posedge clk);
+            // 分数插值让流水从 2 拍变成 3~4 拍，改成等 sample_valid_out 脉冲
+            guard = 0;
+            while (!sample_valid_out && guard < 12) begin
+                @(posedge clk);
+                #1;
+                guard = guard + 1;
+            end
             #1;
             checks = checks + 1;
             if (!sample_valid_out || sample_out !== $signed(expected)) begin

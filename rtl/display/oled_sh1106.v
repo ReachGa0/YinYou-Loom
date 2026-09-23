@@ -174,7 +174,7 @@ module oled_sh1106 #(
 
     // ------------------------------------------------------------
     // PATTERN_MODE=3：P6 状态页。indicator_bits 编码：
-    //   [0]   0=演奏 PERF，1=测试 TEST
+    //   [0]   模式 0=ONE（独奏单音），1=TRI（每键大三和弦）
     //   [1]   音色 0=SINE，1=SQUARE
     //   [2]   效果 1=DRY，0=CHORUS
     //   [5:3] 仍在发声的声部数 0..4
@@ -188,12 +188,12 @@ module oled_sh1106 #(
         reg [7:0] ch;
         begin
             ch = 8'h20;
-            if (line == 3'd0) begin          // TEST MODE / PERF MODE
+            if (line == 3'd0) begin          // TRI MODE / ONE MODE
                 case (pos)
-                    4'd0: ch = bits[0] ? 8'h54 : 8'h50; // T / P
-                    4'd1: ch = 8'h45;                   // E
-                    4'd2: ch = bits[0] ? 8'h53 : 8'h52; // S / R
-                    4'd3: ch = bits[0] ? 8'h54 : 8'h46; // T / F
+                    4'd0: ch = bits[0] ? 8'h54 : 8'h4F; // T / O
+                    4'd1: ch = bits[0] ? 8'h52 : 8'h4E; // R / N
+                    4'd2: ch = bits[0] ? 8'h49 : 8'h45; // I / E
+                    4'd3: ch = 8'h20;                   // space
                     4'd5: ch = 8'h4D;                   // M
                     4'd6: ch = 8'h4F;                   // O
                     4'd7: ch = 8'h44;                   // D
