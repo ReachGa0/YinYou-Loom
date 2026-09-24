@@ -98,6 +98,7 @@ Write-Host ""
 Write-Host "===== 5. P5 交互层（P5A 按键保底 / P5C 超声波）====="
 Test-Suite "tb_key_scan" @("sim/tb_key_scan.v", "rtl/input/key_scan.v")
 Test-Suite "tb_input_map" @("sim/tb_input_map.v", "rtl/input/input_map.v")
+Test-Suite "tb_chord_map" @("sim/tb_chord_map.v", "rtl/input/chord_map.v")
 Test-Suite "tb_rotary_decode" @(
     "sim/tb_rotary_decode.v",
     "rtl/input/rotary_decode.v",

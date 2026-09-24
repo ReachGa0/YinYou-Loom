@@ -215,8 +215,9 @@ module p6_test_demo_top (
     ) u_chord (
         .clk         (clk_sys),
         .rst_n       (rst_n),
-        .key_press   (press_pulse),
-        .key_release (release_pulse),
+        .enable      (chord_sel),        // 独奏模式下强制空闲
+        .pressed     (pressed),          // 按键电平（最近按下优先）
+        .voice_busy  (voice_busy),       // 等尾音收完再起新和弦
         .note_on     (ch_note_on),
         .note_off    (ch_note_off),
         .note_id     (ch_note_id),
