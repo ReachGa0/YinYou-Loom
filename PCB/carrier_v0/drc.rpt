@@ -1,0 +1,174 @@
+** Drc report for Loom_Carrier_V0.kicad_pcb **
+** Created on 2026-10-12T22:00:14 **
+** Report includes: Errors, Warnings, Exclusions **
+
+** Found 6 DRC violations **
+[courtyards_overlap]: Courtyards overlap
+    Rule: <电路板配置> 中的 "元件外框" 约束; error
+    @(20.0000 mm, 25.0000 mm): Footprint J_CORE_A
+    @(44.0000 mm, 22.5000 mm): Footprint C2
+[courtyards_overlap]: Courtyards overlap
+    Rule: <电路板配置> 中的 "元件外框" 约束; error
+    @(74.0000 mm, 30.0000 mm): Footprint TP6
+    @(74.0000 mm, 33.0000 mm): Footprint TP7
+[courtyards_overlap]: Courtyards overlap
+    Rule: <电路板配置> 中的 "元件外框" 约束; error
+    @(22.0000 mm, 6.0000 mm): Footprint JP1
+    @(25.0000 mm, 5.0000 mm): Footprint TP2
+[silk_overlap]: Silkscreen clearance
+    Rule: <电路板配置> 中的 "丝印" 约束; warning
+    @(22.0000 mm, 3.6200 mm): Reference field of JP1
+    @(21.7050 mm, 3.8334 mm): PCB text '1' on F.Silkscreen
+[silk_overlap]: Silkscreen clearance
+    Rule: <电路板配置> 中的 "丝印" 约束; warning
+    @(42.6300 mm, 23.8700 mm): Segment of C2 on F.Silkscreen
+    @(21.2700 mm, 23.6700 mm): Segment of J_CORE_A on F.Silkscreen
+[silk_overlap]: Silkscreen clearance
+    Rule: <电路板配置> 中的 "丝印" 约束; warning
+    @(47.8700 mm, 21.1300 mm): Segment of C2 on F.Silkscreen
+    @(21.2700 mm, 23.6700 mm): Segment of J_CORE_A on F.Silkscreen
+
+** Found 33 unconnected pads **
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(12.0000 mm, 6.0000 mm): PTH pad 1 [+5V_SEL] of J_PWR
+    @(22.0000 mm, 8.5400 mm): PTH pad 2 [+5V_SEL] of JP1
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(12.0000 mm, 6.0000 mm): PTH pad 1 [+5V_SEL] of J_PWR
+    @(12.0000 mm, 18.0000 mm): PTH pad 1 [+5V_SEL] of C7
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(25.0000 mm, 5.0000 mm): PTH pad 1 [+5V_SEL] of TP2
+    @(22.0000 mm, 8.5400 mm): PTH pad 2 [+5V_SEL] of JP1
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(32.0000 mm, 7.0000 mm): PTH pad 1 [+5V_SEL] of C10
+    @(25.0000 mm, 5.0000 mm): PTH pad 1 [+5V_SEL] of TP2
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(100.8600 mm, 38.0000 mm): PTH pad 19 [+5V_SEL] of J_EXT
+    @(32.0000 mm, 7.0000 mm): PTH pad 1 [+5V_SEL] of C10
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(50.0000 mm, 11.0000 mm): PTH pad 1 [TFT_SCLK] of TP4
+    @(25.0800 mm, 16.0000 mm): PTH pad 3 [TFT_SCLK] of J_TFT
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(63.1800 mm, 45.3200 mm): PTH pad 18 [TFT_SCLK] of J_CORE_B
+    @(50.0000 mm, 11.0000 mm): PTH pad 1 [TFT_SCLK] of TP4
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(27.6200 mm, 16.0000 mm): PTH pad 4 [TFT_MOSI] of J_TFT
+    @(60.6400 mm, 45.3200 mm): PTH pad 17 [TFT_MOSI] of J_CORE_B
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(25.0800 mm, 25.0000 mm): PTH pad 3 [TFT_RES] of J_CORE_A
+    @(30.1600 mm, 16.0000 mm): PTH pad 5 [TFT_RES] of J_TFT
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(22.5400 mm, 25.0000 mm): PTH pad 2 [TFT_DC] of J_CORE_A
+    @(32.7000 mm, 16.0000 mm): PTH pad 6 [TFT_DC] of J_TFT
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(35.2400 mm, 16.0000 mm): PTH pad 7 [TFT_CS] of J_TFT
+    @(20.0000 mm, 25.0000 mm): PTH pad 1 [TFT_CS] of J_CORE_A
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(56.0000 mm, 11.0000 mm): PTH pad 1 [TFT_CS] of TP5
+    @(35.2400 mm, 16.0000 mm): PTH pad 7 [TFT_CS] of J_TFT
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(25.0800 mm, 45.3200 mm): PTH pad 3 [TFT_BLK] of J_CORE_B
+    @(37.7800 mm, 16.0000 mm): PTH pad 8 [TFT_BLK] of J_TFT
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(74.0000 mm, 33.0000 mm): PTH pad 1 [I2C_SDA] of TP7
+    @(27.6200 mm, 25.0000 mm): PTH pad 4 [I2C_SDA] of J_CORE_A
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(98.3200 mm, 40.5400 mm): PTH pad 18 [I2C_SDA] of J_EXT
+    @(74.0000 mm, 33.0000 mm): PTH pad 1 [I2C_SDA] of TP7
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(74.0000 mm, 30.0000 mm): PTH pad 1 [I2C_SCL] of TP6
+    @(30.1600 mm, 25.0000 mm): PTH pad 5 [I2C_SCL] of J_CORE_A
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(95.7800 mm, 40.5400 mm): PTH pad 16 [I2C_SCL] of J_EXT
+    @(74.0000 mm, 30.0000 mm): PTH pad 1 [I2C_SCL] of TP6
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(10.0000 mm, 54.0000 mm): PTH pad 1 [KEY_MODE] of J_SW1
+    @(37.7800 mm, 25.0000 mm): PTH pad 8 [KEY_MODE] of J_CORE_A
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(19.0000 mm, 54.0000 mm): PTH pad 1 [KEY1_C4] of J_KEY1
+    @(40.3200 mm, 25.0000 mm): PTH pad 9 [KEY1_C4] of J_CORE_A
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(42.8600 mm, 25.0000 mm): PTH pad 10 [KEY_LEVEL] of J_CORE_A
+    @(55.0000 mm, 54.0000 mm): PTH pad 1 [KEY_LEVEL] of J_SW2
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(45.4000 mm, 25.0000 mm): PTH pad 11 [ULTRA_TRIG] of J_CORE_A
+    @(66.5400 mm, 54.0000 mm): PTH pad 2 [ULTRA_TRIG] of J_ULTRA
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(28.0000 mm, 54.0000 mm): PTH pad 1 [KEY2_E4] of J_KEY2
+    @(47.9400 mm, 25.0000 mm): PTH pad 12 [KEY2_E4] of J_CORE_A
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(37.0000 mm, 54.0000 mm): PTH pad 1 [KEY3_G4] of J_KEY3
+    @(50.4800 mm, 25.0000 mm): PTH pad 13 [KEY3_G4] of J_CORE_A
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(46.0000 mm, 54.0000 mm): PTH pad 1 [KEY4_B4] of J_KEY4
+    @(53.0200 mm, 25.0000 mm): PTH pad 14 [KEY4_B4] of J_CORE_A
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(32.7000 mm, 45.3200 mm): PTH pad 6 [SPARE_41] of J_CORE_B
+    @(78.0000 mm, 40.5400 mm): PTH pad 2 [SPARE_41] of J_EXT
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(30.1600 mm, 45.3200 mm): PTH pad 5 [SPARE_42] of J_CORE_B
+    @(80.5400 mm, 40.5400 mm): PTH pad 4 [SPARE_42] of J_EXT
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(42.8600 mm, 45.3200 mm): PTH pad 10 [SPARE_48] of J_CORE_B
+    @(83.0800 mm, 40.5400 mm): PTH pad 6 [SPARE_48] of J_EXT
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(47.9400 mm, 45.3200 mm): PTH pad 12 [SPARE_49] of J_CORE_B
+    @(85.6200 mm, 40.5400 mm): PTH pad 8 [SPARE_49] of J_EXT
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(68.2600 mm, 45.3200 mm): PTH pad 20 [SPARE_52] of J_CORE_B
+    @(88.1600 mm, 40.5400 mm): PTH pad 10 [SPARE_52] of J_EXT
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(65.7200 mm, 45.3200 mm): PTH pad 19 [SPARE_53] of J_CORE_B
+    @(90.7000 mm, 40.5400 mm): PTH pad 12 [SPARE_53] of J_EXT
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(50.4800 mm, 45.3200 mm): PTH pad 13 [SPARE_86] of J_CORE_B
+    @(93.2400 mm, 40.5400 mm): PTH pad 14 [SPARE_86] of J_EXT
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(20.0000 mm, 45.3200 mm): PTH pad 1 [+5V] of J_CORE_B
+    @(22.0000 mm, 6.0000 mm): PTH pad 1 [+5V] of JP1
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(27.6200 mm, 45.3200 mm): PTH pad 4 [ULTRA_ECHO] of J_CORE_B
+    @(69.0800 mm, 54.0000 mm): PTH pad 3 [ULTRA_ECHO] of J_ULTRA
+
+** Found 0 Footprint errors **
+
+** Ignored checks **
+    - Footprint has no courtyard defined
+    - Track endpoint not centered on via
+    - Tuning profile track geometries
+    - Footprint doesn't match symbol's footprint filters
+    - Footprint component type doesn't match footprint pads
+
+** End of Report **

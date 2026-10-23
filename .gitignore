@@ -56,6 +56,20 @@ desktop.ini
 *.tmp
 ~$*
 
+# ---------- 本地实验 / 参考资料（保留在磁盘，不进入主仓库） ----------
+# refs/ 内含官方示例的嵌套 git 仓库与约 100MB 的位流文件，直接提交会把主库搞乱
+refs/
+tmp/
+
+# ---------- PlatformIO 构建产物（experiments/ 下的 STM32 调试工程） ----------
+.pio/
+
+# ---------- PCB 历史备份与日志 ----------
+PCB/*_backup/
+PCB/PCB_backup/
+PCB/debug.log
+PCB/carrier_v0/.history/
+
 # ============================================================
 # 说明：以下内容**必须提交**，不要加入忽略列表
 #   data/wavetables/*.hex   RTL 的 $readmemh 依赖它

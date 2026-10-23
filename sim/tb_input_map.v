@@ -1,7 +1,7 @@
 `timescale 1ns/1ps
 
 module tb_input_map;
-    parameter KEYS = 4;
+    parameter KEYS = 7;
     parameter PHASE_BITS = 32;
     parameter NOTE_ID_W = 7;
 
@@ -39,24 +39,38 @@ module tb_input_map;
     endtask
 
     initial begin
-        key_press   = 4'b0000;
-        key_release = 4'b0000;
+        key_press   = {KEYS{1'b0}};
+        key_release = {KEYS{1'b0}};
         failures    = 0;
         #1;
 
-        key_press = 4'b0001;
+        // K1 -> C4
+        key_press = 7'b0000001;
         #1;
         check(note_on === 1'b1, "key 0 should emit note_on");
         check(note_off === 1'b0, "note_off should be low while pressing");
         check(note_id === 7'd60, "key 0 should map to C4");
         check(note_inc === 32'd23409859, "key 0 inc should match C4");
 
-        key_press = 4'b0000;
-        key_release = 4'b0010;
+        // K5 -> G4
+        key_press = 7'b0010000;
+        #1;
+        check(note_id === 7'd67, "key 4 should map to G4");
+        check(note_inc === 32'd35075158, "key 4 inc should match G4");
+
+        // K7 -> B4
+        key_press = 7'b1000000;
+        #1;
+        check(note_id === 7'd71, "key 6 should map to B4");
+        check(note_inc === 32'd44191930, "key 6 inc should match B4");
+
+        // 松开 K2 -> D4
+        key_press   = {KEYS{1'b0}};
+        key_release = 7'b0000010;
         #1;
         check(note_on === 1'b0, "note_on should be low while releasing");
         check(note_off === 1'b1, "key 1 release should emit note_off");
-        check(note_id === 7'd64, "key 1 should map to E4");
+        check(note_id === 7'd62, "key 1 should map to D4");
 
         if (failures == 0)
             $display("RESULT: ALL PASS");

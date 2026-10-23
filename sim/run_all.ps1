@@ -120,6 +120,9 @@ Test-Suite "tb_p5_baseline" @(
 
 Test-Suite "tb_sonar_range" @("sim/tb_sonar_range.v", "rtl/input/sonar_range.v")
 
+Test-Suite "tb_rc_adc" @("sim/tb_rc_adc.v", "rtl/input/rc_adc.v")
+Test-Suite "tb_pitch_bend_map" @("sim/tb_pitch_bend_map.v", "rtl/input/pitch_bend_map.v")
+
 Write-Host ""
 Write-Host "===== 3. I2S 发送器 ====="
 Test-Suite "tb_i2s_tx" @("sim/tb_i2s_tx.v", "rtl/io/i2s_tx.v")
@@ -144,6 +147,18 @@ Test-Suite "tb_oled_status_square" @(
 Test-Suite "tb_oled_status_dry" @(
     "sim/tb_oled_status.v", "sim/i2c_slave_model.v",
     "rtl/display/oled_sh1106.v", "rtl/io/i2c_master.v") @("-Ptb_oled_status.COUNT=1", "-Ptb_oled_status.TIMBRE=0", "-Ptb_oled_status.BYPASS=1")
+
+Test-Suite "tb_tft_st7789" @(
+    "sim/tb_tft_st7789.v", "rtl/display/tft_st7789.v")
+
+Test-Suite "tb_tft_st7789_invoff" @(
+    "sim/tb_tft_st7789.v", "rtl/display/tft_st7789.v") "-Ptb_tft_st7789.INVERT=0"
+
+Test-Suite "tb_ui_render" @(
+    "sim/tb_ui_render.v", "rtl/display/ui_render.v", "rtl/display/font8x16_rom.v")
+
+Test-Suite "tb_wave_capture" @(
+    "sim/tb_wave_capture.v", "rtl/display/wave_capture.v")
 
 Write-Host ""
 Write-Host "========================================"

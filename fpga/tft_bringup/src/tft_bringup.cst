@@ -1,0 +1,40 @@
+// tft_bringup pin constraints
+// Device: GW2AR-LV18QN88C8/I7
+//
+// 2.4 寸 ST7789 TFT 的 8 脚排针（GND / 3V3 / SCL / SDA / RES / DC / CS / BLK）
+// 对应到 FPGA 的 PIN71-76（原 v1.3 TFT 方案那一组）。
+//
+// ⚠️ BLK 必须 PULL_MODE=DOWN：FPGA 配置期间 IO 是三态，若不定死，
+//    背光会在配置期间半亮/闪一下，干扰"屏到底亮没亮"的判断。
+//
+// ⚠️ PIN71/72 在旧工程里是 I2C 调试屏的 SCL/SDA，同一工程只能二选一。
+
+// 板载 27 MHz 晶振
+IO_LOC "clk" 4;
+IO_PORT "clk" PULL_MODE=UP IO_TYPE=LVCMOS33;
+
+// ST7789 SPI（模式 0）
+IO_LOC "sclk" 71;
+IO_PORT "sclk" PULL_MODE=UP DRIVE=8 IO_TYPE=LVCMOS33;
+IO_LOC "mosi" 72;
+IO_PORT "mosi" PULL_MODE=UP DRIVE=8 IO_TYPE=LVCMOS33;
+IO_LOC "cs_n" 73;
+IO_PORT "cs_n" PULL_MODE=UP DRIVE=8 IO_TYPE=LVCMOS33;
+IO_LOC "dc" 74;
+IO_PORT "dc" PULL_MODE=UP DRIVE=8 IO_TYPE=LVCMOS33;
+IO_LOC "res_n" 75;
+IO_PORT "res_n" PULL_MODE=UP DRIVE=8 IO_TYPE=LVCMOS33;
+IO_LOC "blk" 76;
+IO_PORT "blk" PULL_MODE=DOWN DRIVE=8 IO_TYPE=LVCMOS33;
+
+// 状态机诊断：LED0 = 就绪，LED1-4 = dbg_state 二进制（低电平点亮）
+IO_LOC "led_n[0]" 15;
+IO_PORT "led_n[0]" PULL_MODE=UP DRIVE=8 IO_TYPE=LVCMOS33;
+IO_LOC "led_n[1]" 16;
+IO_PORT "led_n[1]" PULL_MODE=UP DRIVE=8 IO_TYPE=LVCMOS33;
+IO_LOC "led_n[2]" 17;
+IO_PORT "led_n[2]" PULL_MODE=UP DRIVE=8 IO_TYPE=LVCMOS33;
+IO_LOC "led_n[3]" 18;
+IO_PORT "led_n[3]" PULL_MODE=UP DRIVE=8 IO_TYPE=LVCMOS33;
+IO_LOC "led_n[4]" 19;
+IO_PORT "led_n[4]" PULL_MODE=UP DRIVE=8 IO_TYPE=LVCMOS33;

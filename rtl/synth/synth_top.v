@@ -17,12 +17,15 @@ module synth_top #(
     parameter LEVEL_W    = 16,
     parameter GAIN_W     = 16,
     parameter INIT_FILE0 = "data/wavetables/sine_4096x16.hex",
-    parameter INIT_FILE1 = "data/wavetables/square_4096x16.hex"
+    parameter INIT_FILE1 = "data/wavetables/square_4096x16.hex",
+    parameter INIT_FILE2 = "data/wavetables/saw_4096x16.hex",
+    parameter INIT_FILE3 = "data/wavetables/triangle_4096x16.hex"
 ) (
     input  wire                              clk,
     input  wire                              rst_n,
     input  wire                              sample_en,
-    input  wire                              table_sel,
+    input  wire [1:0]                        table_sel,
+    input  wire [15:0]                       bend_q15,   // 32768 = 1.0（音高弯音）
 
     input  wire [VOICES*PHASE_BITS-1:0]      inc_flat,
     input  wire [VOICES-1:0]                 gate_flat,
@@ -44,12 +47,29 @@ module synth_top #(
     wire                         arb_scan_done;
     wire                         mix_valid;
 
+    // ---- 音高弯音：所有声部乘同一个 Q15 系数 ----
+    // 放在这一层，voice / voice_osc 不用改；4 个 32×16 乘法正好用 DSP。
+    wire [VOICES*PHASE_BITS-1:0] inc_bent_flat;
+
+    genvar j;
+    generate
+        for (j = 0; j < VOICES; j = j + 1) begin : g_bend
+            // 32×16 的乘积必须用 48 位中间量承接：
+            // Verilog 中乘法结果宽度取两个操作数的最大宽度，直接写会截断。
+            wire [PHASE_BITS+15:0] bend_prod =
+                inc_flat[j*PHASE_BITS +: PHASE_BITS] * bend_q15;
+            assign inc_bent_flat[j*PHASE_BITS +: PHASE_BITS] = bend_prod >>> 15;
+        end
+    endgenerate
+
     wavetable_arbiter #(
         .VOICES    (VOICES),
         .ADDR_BITS (ADDR_BITS),
         .SAMPLE_W  (SAMPLE_W),
         .INIT_FILE0 (INIT_FILE0),
-        .INIT_FILE1 (INIT_FILE1)
+        .INIT_FILE1 (INIT_FILE1),
+        .INIT_FILE2 (INIT_FILE2),
+        .INIT_FILE3 (INIT_FILE3)
     ) u_arbiter (
         .clk              (clk),
         .rst_n            (rst_n),
@@ -74,7 +94,7 @@ module synth_top #(
                 .clk           (clk),
                 .rst_n         (rst_n),
                 .sample_en     (sample_en),
-                .inc           (inc_flat[i*PHASE_BITS +: PHASE_BITS]),
+                .inc           (inc_bent_flat[i*PHASE_BITS +: PHASE_BITS]),
                 .gate          (gate_flat[i]),
                 .a_step        (a_step_flat[i*LEVEL_W +: LEVEL_W]),
                 .d_step        (d_step_flat[i*LEVEL_W +: LEVEL_W]),

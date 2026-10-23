@@ -11,12 +11,14 @@ module wavetable_arbiter #(
     parameter ADDR_BITS = 12,
     parameter SAMPLE_W  = 16,
     parameter INIT_FILE0 = "data/wavetables/sine_4096x16.hex",
-    parameter INIT_FILE1 = "data/wavetables/square_4096x16.hex"
+    parameter INIT_FILE1 = "data/wavetables/square_4096x16.hex",
+    parameter INIT_FILE2 = "data/wavetables/saw_4096x16.hex",
+    parameter INIT_FILE3 = "data/wavetables/triangle_4096x16.hex"
 ) (
     input  wire                          clk,
     input  wire                          rst_n,
     input  wire                          sample_en,
-    input  wire                          table_sel,
+    input  wire [1:0]                    table_sel,   // 0=SINE 1=SQUARE 2=SAW 3=TRI
     input  wire [VOICES*ADDR_BITS-1:0]   wave_addr_flat,
 
     output reg  [VOICES*SAMPLE_W-1:0]    wave_sample_flat,
@@ -39,7 +41,9 @@ module wavetable_arbiter #(
         .ADDR_BITS  (ADDR_BITS),
         .DATA_W     (SAMPLE_W),
         .INIT_FILE0 (INIT_FILE0),
-        .INIT_FILE1 (INIT_FILE1)
+        .INIT_FILE1 (INIT_FILE1),
+        .INIT_FILE2 (INIT_FILE2),
+        .INIT_FILE3 (INIT_FILE3)
     ) u_bank (
         .clk       (clk),
         .addr      (bank_addr),

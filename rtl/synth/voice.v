@@ -71,23 +71,11 @@ module voice #(
     wire signed [31:0] env_product = osc_ext * env_ext;
 
     wire signed [SAMPLE_W-1:0] env_sample = env_product[31:16];
-    reg  signed [31:0]         gained_sample;
-    wire signed [SAMPLE_W-1:0] mixed_sample = gained_sample[15:0];
-
-    // 增益系数均为 1/32 网格上的常量，用移位和加减实现。
-    always @* begin
-        case (gain_q15)
-            16'd25600: gained_sample = env_sample - (env_sample >>> 2)
-                                      + (env_sample >>> 5);  // 25/32
-            16'd22528: gained_sample = env_sample - (env_sample >>> 2)
-                                      - (env_sample >>> 4);  // 11/16
-            16'd20480: gained_sample = (env_sample >>> 1)
-                                      + (env_sample >>> 3);  // 5/8
-            16'd18432: gained_sample = (env_sample >>> 1)
-                                      + (env_sample >>> 4);  // 9/16
-            default:   gained_sample = env_sample;            // 1.0
-        endcase
-    end
+    // 通用 Q15 增益（32768 = 1.0）。
+    // 原来是一个只认 4 个 A 加权常量的 case，其它值（例如力度算出的
+    // 16384/24576）会落到 default=1.0，导致力度完全不起作用。
+    wire signed [31:0] gain_prod = env_sample * $signed({1'b0, gain_q15});
+    wire signed [SAMPLE_W-1:0] mixed_sample = gain_prod[30:15];   // >>15
 
     // 一级输出流水：打断 ADSR -> 乘法/增益 -> mixer 的长组合路径。
     always @(posedge clk or negedge rst_n) begin

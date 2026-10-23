@@ -8,7 +8,7 @@ module tb_wavetable_arbiter;
     reg                           clk;
     reg                           rst_n;
     reg                           sample_en;
-    reg                           table_sel;
+    reg  [1:0]                    table_sel;
     reg  [VOICES*ADDR_BITS-1:0]   addr_flat;
     wire [VOICES*SAMPLE_W-1:0]    sample_flat;
     wire [VOICES-1:0]             valid;
@@ -53,7 +53,7 @@ module tb_wavetable_arbiter;
         clk        = 1'b0;
         rst_n      = 1'b0;
         sample_en  = 1'b0;
-        table_sel  = 1'b0;
+        table_sel  = 2'd0;
         addr_flat  = {VOICES*ADDR_BITS{1'b0}};
         failures   = 0;
 
@@ -76,7 +76,7 @@ module tb_wavetable_arbiter;
             end
         end
 
-        table_sel = 1'b1;
+        table_sel = 2'd1;
         for (i = 0; i < VOICES; i = i + 1)
             addr_flat[i*ADDR_BITS +: ADDR_BITS] = i + 16;
 

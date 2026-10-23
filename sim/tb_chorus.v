@@ -4,7 +4,7 @@ module tb_chorus;
     reg clk = 1'b0;
     reg rst_n = 1'b0;
     reg sample_en = 1'b0;
-    reg bypass = 1'b1;
+    reg [1:0] mode = 2'd0;          // 0=DRY 1=CHORUS 2=VIBRATO 3=TREMOLO
     reg signed [15:0] sample_in = 16'sd0;
 
     wire signed [15:0] sample_out;
@@ -25,7 +25,7 @@ module tb_chorus;
         .clk              (clk),
         .rst_n            (rst_n),
         .sample_en        (sample_en),
-        .bypass           (bypass),
+        .mode             (mode),
         .sample_in        (sample_in),
         .sample_out       (sample_out),
         .sample_valid_out (sample_valid_out)
@@ -91,7 +91,7 @@ module tb_chorus;
             check_output(16'd4000, "fill delay");
         end
 
-        bypass = 1'b0;
+        mode = 2'd1;
         push_sample(16'd1000);
         check_output(16'd2500, "chorus mix positive");
 

@@ -14,6 +14,8 @@
         <File path="../../rtl/common/sync_reset.v" type="file.verilog" enable="1"/>
         <File path="../../rtl/common/frac_div.v" type="file.verilog" enable="1"/>
         <File path="../../rtl/input/key_scan.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/input/rc_adc.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/input/pitch_bend_map.v" type="file.verilog" enable="1"/>
         <File path="../../rtl/synth/wavetable_rom.v" type="file.verilog" enable="1"/>
         <File path="../../rtl/synth/wavetable_bank.v" type="file.verilog" enable="1"/>
         <File path="../../rtl/synth/wavetable_arbiter.v" type="file.verilog" enable="1"/>
@@ -27,6 +29,9 @@
         <File path="../../rtl/synth/chorus.v" type="file.verilog" enable="1"/>
         <File path="../../rtl/io/i2s_tx.v" type="file.verilog" enable="1"/>
         <File path="../../rtl/io/i2c_master.v" type="file.verilog" enable="1"/>
-        <File path="../../rtl/display/oled_sh1106.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/display/tft_st7789.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/display/ui_render.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/display/wave_capture.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/display/font8x16_rom.v" type="file.verilog" enable="1"/>
     </FileList>
 </Project>

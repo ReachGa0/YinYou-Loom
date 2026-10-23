@@ -86,7 +86,9 @@ module tb_test_mode;
         .clk          (clk),
         .rst_n        (rst_n),
         .sample_en    (sample_en),
-        .table_sel    (1'b0),                 // 正弦：谱线最干净
+        .table_sel    (2'd0),                 // 正弦：谱线最干净
+        .bend_q15     (16'd32768),
+        .velocity     (8'd255),
         .note_on      (note_on),
         .note_off     (note_off),
         .note_id      (note_id),

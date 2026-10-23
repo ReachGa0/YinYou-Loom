@@ -1,0 +1,17 @@
+<?xml version="1" encoding="UTF-8"?>
+<!DOCTYPE gowin-fpga-project>
+<Project>
+    <Template>FPGA</Template>
+    <Version>5</Version>
+    <Device name="GW2AR-18C" pn="GW2AR-LV18QN88C8/I7">gw2ar18c-000</Device>
+    <FileList>
+        <File path="src/tft_ui_demo.cst" type="file.cst" enable="1"/>
+        <File path="src/tft_ui_demo.sdc" type="file.sdc" enable="1"/>
+        <File path="../loom/src/gowin_rpll/gowin_rpll.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/tft_ui_top.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/display/tft_st7789.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/display/ui_render.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/display/font8x16_rom.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/common/sync_reset.v" type="file.verilog" enable="1"/>
+    </FileList>
+</Project>

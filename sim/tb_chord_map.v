@@ -5,25 +5,25 @@
 //
 // 场景：
 //   1. enable=0（独奏模式）时按任何键都不应发脉冲；
-//   2. 按 A → 三个 note_on（60/64/67），且 G4 的调音字必须是 35075158
+//   2. 按 I 级 → 三个 note_on（60/64/67），且 G4 的调音字必须是 35075158
 //      （防止表里的数字再被写错一位）；
-//   3. 按住 A 再按 B → 先释放 A 的三个音，等 voice_busy 归零后起 B 的三个音
-//      （64/68/71）；
-//   4. 松开 B（A 仍按住）→ 释放 B，等空前再起回 A（60/64/67）；
-//   5. 松开 A → 释放后进入空闲，不再有任何脉冲；
+//   3. 按住 I 再按 ii → 先释放 I 的三个音，等 voice_busy 归零后起 ii 的三个音
+//      （62/65/69，C 大调自然三和弦）；
+//   4. 松开 ii（I 仍按住）→ 释放 ii，等空前再起回 I（60/64/67）；
+//   5. 松开 I → 释放后进入空闲，不再有任何脉冲；
 //   6. note_on / note_off 必须是单周期脉冲。
 //
 // voice_busy 由测试台模拟：收到 note_off 后保持 300 个周期（相当于 ADSR 释放尾音）。
 // ============================================================
 
 module tb_chord_map;
-    localparam KEYS = 4;
+    localparam KEYS = 7;
 
     reg               clk = 1'b0;
     reg               rst_n = 1'b0;
     reg               enable = 1'b0;
     reg  [KEYS-1:0]   pressed = {KEYS{1'b0}};
-    reg  [KEYS-1:0]   voice_busy = {KEYS{1'b0}};
+    reg  [3:0]        voice_busy = 4'b0000;
 
     wire              note_on;
     wire              note_off;
@@ -101,7 +101,7 @@ module tb_chord_map;
         else if (busy_cnt != 0)
             busy_cnt <= busy_cnt - 1;
 
-        voice_busy <= (busy_cnt != 0) ? {KEYS{1'b1}} : {KEYS{1'b0}};
+        voice_busy <= (busy_cnt != 0) ? 4'b1111 : 4'b0000;
     end
 
     task check;
@@ -151,49 +151,50 @@ module tb_chord_map;
         check(on_count == 0, "enable=0: no note_on pulses");
         check(off_count == 0, "enable=0: no note_off pulses");
 
-        // 场景 2：切到和弦模式，按 A → 三个音 60/64/67
+        // 场景 2：切到和弦模式，按 I → 三个音 60/64/67
         enable = 1'b1;
         wait_ons(3);
         repeat (2) @(posedge clk);
-        check(on_count == 3, "A: exactly three note_on");
-        check(on_ids[0] == 7'd60, "A chord step0 = C4");
-        check(on_ids[1] == 7'd64, "A chord step1 = E4");
-        check(on_ids[2] == 7'd67, "A chord step2 = G4");
+        check(on_count == 3, "I: exactly three note_on");
+        check(on_ids[0] == 7'd60, "I chord step0 = C4");
+        check(on_ids[1] == 7'd64, "I chord step1 = E4");
+        check(on_ids[2] == 7'd67, "I chord step2 = G4");
         check(on_incs[2] == 32'd35075158, "G4 tuning word is 35075158");
         check(on_incs[0] == 32'd23409859, "C4 tuning word is 23409859");
-        check(off_count == 0, "A: no note_off while held");
+        check(off_count == 0, "I: no note_off while held");
 
-        // 场景 3：按住 A 再按 B → 释放 A(60/64/67) → 起 B(64/68/71)
+        // 场景 3：按住 I 再按 ii → 释放 I(60/64/67) → 起 ii(62/65/69)
         pressed[1] = 1'b1;
         wait_offs(3);
         check(off_ids[0] == 7'd60 && off_ids[1] == 7'd64 && off_ids[2] == 7'd67,
-              "B press releases A chord 60/64/67");
+              "ii press releases I chord 60/64/67");
         wait_ons(6);
         repeat (2) @(posedge clk);
-        check(on_ids[3] == 7'd64, "B chord step0 = E4");
-        check(on_ids[4] == 7'd68, "B chord step1 = G#4");
-        check(on_ids[5] == 7'd71, "B chord step2 = B4");
-        check(on_count == 6, "B: exactly three more note_on");
+        check(on_ids[3] == 7'd62, "ii chord step0 = D4");
+        check(on_ids[4] == 7'd65, "ii chord step1 = F4");
+        check(on_ids[5] == 7'd69, "ii chord step2 = A4");
+        check(on_incs[5] == 32'd39370534, "A4 tuning word is 39370534");
+        check(on_count == 6, "ii: exactly three more note_on");
 
-        // 场景 4：松开 B（A 仍按住）→ 释放 B → 回到 A
+        // 场景 4：松开 ii（I 仍按住）→ 释放 ii → 回到 I
         pressed[1] = 1'b0;
         wait_offs(6);
         repeat (2) @(posedge clk);
-        check(off_ids[3] == 7'd64 && off_ids[4] == 7'd68 && off_ids[5] == 7'd71,
-              "B release sends 64/68/71");
+        check(off_ids[3] == 7'd62 && off_ids[4] == 7'd65 && off_ids[5] == 7'd69,
+              "ii release sends 62/65/69");
         wait_ons(9);
         repeat (2) @(posedge clk);
         check(on_ids[6] == 7'd60 && on_ids[7] == 7'd64 && on_ids[8] == 7'd67,
-              "release B: back to A chord 60/64/67");
-        check(on_count == 9, "back to A: exactly three more note_on");
+              "release ii: back to I chord 60/64/67");
+        check(on_count == 9, "back to I: exactly three more note_on");
 
-        // 场景 5：松开 A → 释放后空闲，不再有脉冲
+        // 场景 5：松开 I → 释放后空闲，不再有脉冲
         pressed[0] = 1'b0;
         wait_offs(9);
         repeat (400) @(posedge clk);
         check(on_count == 9, "all released: no extra note_on");
         check(off_count == 9, "all released: exactly nine note_off total");
-        check(chord_on == 4'b0000, "chord_on cleared when idle");
+        check(chord_on == 7'b0000000, "chord_on cleared when idle");
 
         // 场景 6：脉冲宽度
         check(on_run_max == 1,  "note_on is a single-cycle pulse");

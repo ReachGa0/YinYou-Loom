@@ -17,12 +17,16 @@ module synth_engine #(
     parameter NOTE_ID_W  = 7,
     parameter [LEVEL_W-1:0] SUSTAIN_LEVEL = 16'd8192,
     parameter INIT_FILE0 = "data/wavetables/sine_4096x16.hex",
-    parameter INIT_FILE1 = "data/wavetables/square_4096x16.hex"
+    parameter INIT_FILE1 = "data/wavetables/square_4096x16.hex",
+    parameter INIT_FILE2 = "data/wavetables/saw_4096x16.hex",
+    parameter INIT_FILE3 = "data/wavetables/triangle_4096x16.hex"
 ) (
     input  wire                          clk,
     input  wire                          rst_n,
     input  wire                          sample_en,
-    input  wire                          table_sel,
+    input  wire [1:0]                    table_sel,
+    input  wire [15:0]                   bend_q15,     // 32768 = 1.0
+    input  wire [7:0]                    velocity,     // 0..255（note-on 时锁存）
     input  wire                          note_on,
     input  wire                          note_off,
     input  wire [NOTE_ID_W-1:0]          note_id,
@@ -53,7 +57,10 @@ module synth_engine #(
         end
     endfunction
 
-    wire [15:0] note_gain = gain_for_note(note_id);
+    // 力度：音色 A 加权系数 × velocity/255（24 位中间量，避免乘法被截断）
+    wire [15:0] a_gain   = gain_for_note(note_id);
+    wire [23:0] gain_vel = a_gain * velocity;
+    wire [15:0] note_gain = gain_vel[23:8];
 
     localparam [VOICES*LEVEL_W-1:0] A_STEP_FLAT =
         {VOICES{16'd273}};
@@ -90,12 +97,15 @@ module synth_engine #(
         .SAMPLE_W   (SAMPLE_W),
         .LEVEL_W    (LEVEL_W),
         .INIT_FILE0 (INIT_FILE0),
-        .INIT_FILE1 (INIT_FILE1)
+        .INIT_FILE1 (INIT_FILE1),
+        .INIT_FILE2 (INIT_FILE2),
+        .INIT_FILE3 (INIT_FILE3)
     ) u_synth (
         .clk                (clk),
         .rst_n              (rst_n),
         .sample_en          (sample_en),
         .table_sel          (table_sel),
+        .bend_q15           (bend_q15),
         .inc_flat           (inc_flat),
         .gate_flat          (gate_flat),
         .a_step_flat        (A_STEP_FLAT),
