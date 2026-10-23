@@ -27,6 +27,7 @@ module synth_engine #(
     input  wire [1:0]                    table_sel,
     input  wire [15:0]                   bend_q15,     // 32768 = 1.0
     input  wire [7:0]                    velocity,     // 0..255（note-on 时锁存）
+    input  wire                          pluck,        // 1 = 拨弦包络（一次性衰减）
     input  wire                          note_on,
     input  wire                          note_off,
     input  wire [NOTE_ID_W-1:0]          note_id,
@@ -62,14 +63,16 @@ module synth_engine #(
     wire [23:0] gain_vel = a_gain * velocity;
     wire [15:0] note_gain = gain_vel[23:8];
 
-    localparam [VOICES*LEVEL_W-1:0] A_STEP_FLAT =
-        {VOICES{16'd273}};
-    localparam [VOICES*LEVEL_W-1:0] D_STEP_FLAT =
-        {VOICES{16'd20}};
-    localparam [VOICES*LEVEL_W-1:0] SUSTAIN_FLAT =
-        {VOICES{SUSTAIN_LEVEL}};
-    localparam [VOICES*LEVEL_W-1:0] R_STEP_FLAT =
-        {VOICES{16'd20}};
+    // 拨弦：sustain=0、D/R 放慢到约 340ms，形成自然衰减；
+    // 持续模式：保持原来的 A/D/S/R。
+    wire [15:0] d_step_sel  = pluck ? 16'd4 : 16'd20;
+    wire [15:0] r_step_sel  = pluck ? 16'd4 : 16'd20;
+    wire [15:0] sustain_sel = pluck ? 16'd0 : SUSTAIN_LEVEL;
+
+    wire [VOICES*LEVEL_W-1:0] A_STEP_FLAT = {VOICES{16'd273}};
+    wire [VOICES*LEVEL_W-1:0] D_STEP_FLAT = {VOICES{d_step_sel}};
+    wire [VOICES*LEVEL_W-1:0] SUSTAIN_FLAT = {VOICES{sustain_sel}};
+    wire [VOICES*LEVEL_W-1:0] R_STEP_FLAT = {VOICES{r_step_sel}};
 
     voice_alloc #(
         .VOICES     (VOICES),
@@ -106,6 +109,7 @@ module synth_engine #(
         .sample_en          (sample_en),
         .table_sel          (table_sel),
         .bend_q15           (bend_q15),
+        .one_shot           (pluck),
         .inc_flat           (inc_flat),
         .gate_flat          (gate_flat),
         .a_step_flat        (A_STEP_FLAT),

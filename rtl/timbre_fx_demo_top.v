@@ -129,6 +129,7 @@ module timbre_fx_demo_top (
         .table_sel    ({1'b0, timbre_sel}),
         .bend_q15     (16'd32768),
         .velocity     (8'd255),
+        .pluck        (1'b0),
         .note_on      (note_on),
         .note_off     (note_off),
         .note_id      (note_id),

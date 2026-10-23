@@ -125,6 +125,8 @@ module ui_render #(
     localparam [95:0] S_OPT13 = "TREMOLO     ";
     localparam [95:0] S_OPT20 = "ONE         ";
     localparam [95:0] S_OPT21 = "TRI         ";
+    localparam [95:0] S_OPT22 = "PLUCK ONE   ";
+    localparam [95:0] S_OPT23 = "PLUCK TRI   ";
     localparam [95:0] S_HINT0 = "S1 TIMBRE   ";
     localparam [95:0] S_HINT1 = "S2 FX       ";
     localparam [95:0] S_HINT2 = "SW MODE     ";
@@ -214,6 +216,8 @@ module ui_render #(
                     3'd0: ui_char = S_HDR2 [8*bi +: 8];
                     3'd1: ui_char = S_OPT20[8*bi +: 8];
                     3'd2: ui_char = S_OPT21[8*bi +: 8];
+                    3'd3: ui_char = S_OPT22[8*bi +: 8];
+                    3'd4: ui_char = S_OPT23[8*bi +: 8];
                     3'd5: ui_char = S_HINT2[8*bi +: 8];
                     default: ui_char = 8'h20;
                 endcase
@@ -264,7 +268,7 @@ module ui_render #(
     // 选中行：TONE / FX 各 4 项（2 位），MODE 仍为 2 项
     wire [1:0] sel0 = r_timbre;
     wire [1:0] sel1 = r_fx;
-    wire [1:0] sel2 = r_mode[0]   ? 2'd1 : 2'd0;
+    wire [1:0] sel2 = r_mode;
 
     // ------------------------------------------------------------
     // 波形参数：波长（音符→步长，带平滑）、幅度（发声数）、每帧相位推进

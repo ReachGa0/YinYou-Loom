@@ -66,6 +66,7 @@ module tb_p5_baseline;
         .table_sel    (2'd0),
         .bend_q15     (16'd32768),
         .velocity     (8'd255),
+        .pluck        (1'b0),
         .note_on      (note_on),
         .note_off     (note_off),
         .note_id      (note_id),

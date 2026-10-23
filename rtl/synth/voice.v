@@ -14,6 +14,7 @@ module voice #(
     input  wire [LEVEL_W-1:0]         d_step,
     input  wire [LEVEL_W-1:0]         sustain_level,
     input  wire [LEVEL_W-1:0]         r_step,
+    input  wire                       one_shot,       // 1 = 拨弦（一次性衰减）
     input  wire [GAIN_W-1:0]          gain_q15,       // Q1.15, 32768 = 1.0
 
     output wire [ADDR_BITS-1:0]       wave_addr,
@@ -60,6 +61,7 @@ module voice #(
         .d_step        (d_step),
         .sustain_level (sustain_level),
         .r_step        (r_step),
+        .one_shot      (one_shot),
         .level         (env_level),
         .busy          (busy)
     );

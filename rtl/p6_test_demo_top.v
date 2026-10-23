@@ -168,8 +168,11 @@ module p6_test_demo_top (
     reg [1:0] timbre_sel;   // 0=SINE 1=SQUARE 2=SAW 3=TRIANGLE
     reg [1:0] timbre_req;
     reg [1:0] fx_mode;      // 0=DRY 1=CHORUS 2=VIBRATO 3=TREMOLO
-    reg chord_sel;       // 0=MONO 独奏，1=CHORD 和弦
-    reg chord_req;
+    // MODE 四档：0=ONE(单音持续) 1=TRI(和弦持续) 2=PLUCK ONE 3=PLUCK TRI
+    reg [1:0] mode_sel;
+    reg [1:0] mode_req;
+    wire chord_en  = (mode_sel == 2'd1) || (mode_sel == 2'd3);
+    wire pluck_mode = mode_sel[1];
 
     wire level_lo = ~lvl_pressed[0];   // 低电平 = LO（−6dB），立即生效便于对比
 
@@ -315,8 +318,8 @@ module p6_test_demo_top (
             timbre_sel <= 2'd0;
             timbre_req <= 2'd0;
             fx_mode    <= 2'd0;
-            chord_sel  <= 1'b1;      // 上电默认和弦模式
-            chord_req  <= 1'b1;
+            mode_sel   <= 2'd1;      // 上电默认 TRI（和弦持续）
+            mode_req   <= 2'd1;
         end else begin
             if (ctrl_press_pulse[0])
                 timbre_req <= timbre_req + 2'd1;      // SINE→SQUARE→SAW→TRI 循环
@@ -328,13 +331,13 @@ module p6_test_demo_top (
             // 用脉冲翻转而不是电平判定：轻触键点一下就能切换，不必一直按住；
             // 拨动开关也适用（拨一次产生一个按下脉冲 = 翻转一次）。
             if (mode_press_pulse[0])
-                chord_req <= ~chord_req;
+                mode_req <= mode_req + 2'd1;   // ONE→TRI→PLUCK ONE→PLUCK TRI
 
             if (voice_busy == 4'b0000) begin
                 if (timbre_sel != timbre_req)
                     timbre_sel <= timbre_req;
-                if (chord_sel != chord_req)
-                    chord_sel <= chord_req;
+                if (mode_sel != mode_req)
+                    mode_sel <= mode_req;
             end
         end
     end
@@ -357,7 +360,7 @@ module p6_test_demo_top (
     ) u_chord (
         .clk         (clk_sys),
         .rst_n       (rst_n),
-        .enable      (chord_sel),        // 独奏模式下强制空闲
+        .enable      (chord_en),         // ONE / PLUCK ONE 下强制空闲
         .pressed     (pressed),          // 按键电平（最近按下优先）
         .voice_busy  (voice_busy),       // 等尾音收完再起新和弦
         .note_on     (ch_note_on),
@@ -368,10 +371,10 @@ module p6_test_demo_top (
     );
 
     // 两条通路按模式选择（select 不依赖数据，避免综合器误判未使用）
-    assign note_on  = chord_sel ? ch_note_on  : mono_note_on;
-    assign note_off = chord_sel ? ch_note_off : mono_note_off;
-    assign note_id  = chord_sel ? ch_note_id  : mono_note_id;
-    assign note_inc = chord_sel ? ch_note_inc : mono_note_inc;
+    assign note_on  = chord_en ? ch_note_on  : mono_note_on;
+    assign note_off = chord_en ? ch_note_off : mono_note_off;
+    assign note_id  = chord_en ? ch_note_id  : mono_note_id;
+    assign note_inc = chord_en ? ch_note_inc : mono_note_inc;
 
     synth_engine #(
         .VOICES        (4),
@@ -395,6 +398,7 @@ module p6_test_demo_top (
         .bend_q15     (bend_q15),
         // 力度改为"持续表情"（混音后增益），单声部锁存力度固定为满
         .velocity     (8'd255),
+        .pluck        (pluck_mode),
         .note_on      (note_on),
         .note_off     (note_off),
         .note_id      (note_id),
@@ -465,7 +469,7 @@ module p6_test_demo_top (
     // 2.4 寸 TFT 横屏 UI（docs/22）：ui_render 只读演奏状态，不反向改音频
     //   st_timbre : timbre_sel（0=SINE 1=SQUARE 2=SAW 3=TRI）
     //   st_fx     : fx_mode（0=DRY 1=CHORUS 2=VIBRATO 3=TREMOLO）
-    //   st_mode   : chord_sel（0=ONE 独奏 1=TRI 和弦）
+    //   st_mode   : 0=ONE 1=TRI 2=PLUCK ONE 3=PLUCK TRI
     //   st_note   : 当前发声音符（驱动波长）  st_voices: 同时发声数（驱动幅度 0..±40px）
     //   调式仍是占位（旋钮未接线），固定 0
     // ------------------------------------------------------------
@@ -492,7 +496,7 @@ module p6_test_demo_top (
         .rst_n       (rst_n),
         .st_timbre   (timbre_sel),
         .st_fx       (fx_mode),
-        .st_mode     ({1'b0, chord_sel}),
+        .st_mode     (mode_sel),
         .st_note     (note_id),
         .st_voices   (voice_cnt),
         .st_key_root (7'd0),

@@ -52,6 +52,7 @@ module tb_voice_osc;
         .sample_en          (sample_en),
         .table_sel          (2'd0),
         .bend_q15           (16'd32768),
+        .one_shot           (1'b0),
         .inc_flat           (`INC_440),
         .gate_flat          (1'b1),
         .a_step_flat        (16'd65535),

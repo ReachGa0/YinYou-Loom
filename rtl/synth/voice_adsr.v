@@ -9,6 +9,7 @@ module voice_adsr #(
     input  wire [LEVEL_W-1:0]    d_step,          // Decay 每采样减少量
     input  wire [LEVEL_W-1:0]    sustain_level,   // Sustain 保持电平
     input  wire [LEVEL_W-1:0]    r_step,          // Release 每采样减少量
+    input  wire                  one_shot,        // 1 = 拨弦：衰减到 0 后自动结束
     output reg  [LEVEL_W-1:0]    level,           // 当前包络值 0~65535
     output reg                   busy             // 是否还在发声
 );
@@ -21,6 +22,7 @@ module voice_adsr #(
     localparam [LEVEL_W-1:0] LEVEL_MAX = {LEVEL_W{1'b1}};
 
     reg [2:0] state;
+    reg       gate_consumed;      // 拨弦结束后，按键仍按着也不重触发
 
     wire [LEVEL_W:0] decay_stop = {1'b0, sustain_level} + {1'b0, d_step};
 
@@ -29,13 +31,16 @@ module voice_adsr #(
             state <= S_IDLE;
             level <= {LEVEL_W{1'b0}};
             busy  <= 1'b0;
+            gate_consumed <= 1'b0;
         end else if (sample_en) begin
             case (state)
 
                 S_IDLE: begin
                     level <= {LEVEL_W{1'b0}};
                     busy  <= 1'b0;
-                    if (gate) begin
+                    if (!gate)
+                        gate_consumed <= 1'b0;
+                    if (gate && !gate_consumed) begin
                         state <= S_ATTACK;
                         busy  <= 1'b1;
                     end
@@ -64,10 +69,18 @@ module voice_adsr #(
                 end
 
                 S_SUSTAIN: begin
-                    busy  <= 1'b1;
-                    level <= sustain_level;
-                    if (!gate)
-                        state <= S_RELEASE;
+                    if (one_shot) begin
+                        // 拨弦：衰减到 0 后自动释放，不再占用声部
+                        level <= {LEVEL_W{1'b0}};
+                        busy  <= 1'b0;
+                        gate_consumed <= 1'b1;
+                        state <= S_IDLE;
+                    end else begin
+                        busy  <= 1'b1;
+                        level <= sustain_level;
+                        if (!gate)
+                            state <= S_RELEASE;
+                    end
                 end
 
                 S_RELEASE: begin

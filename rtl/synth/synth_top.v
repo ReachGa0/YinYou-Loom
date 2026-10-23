@@ -26,6 +26,7 @@ module synth_top #(
     input  wire                              sample_en,
     input  wire [1:0]                        table_sel,
     input  wire [15:0]                       bend_q15,   // 32768 = 1.0（音高弯音）
+    input  wire                              one_shot,   // 1 = 拨弦包络
 
     input  wire [VOICES*PHASE_BITS-1:0]      inc_flat,
     input  wire [VOICES-1:0]                 gate_flat,
@@ -100,6 +101,7 @@ module synth_top #(
                 .d_step        (d_step_flat[i*LEVEL_W +: LEVEL_W]),
                 .sustain_level (sustain_level_flat[i*LEVEL_W +: LEVEL_W]),
                 .r_step        (r_step_flat[i*LEVEL_W +: LEVEL_W]),
+                .one_shot      (one_shot),
                 .gain_q15      (gain_flat[i*GAIN_W +: GAIN_W]),
                 .wave_addr     (wave_addr_flat[i*ADDR_BITS +: ADDR_BITS]),
                 .wave_sample   (wave_sample_flat[i*SAMPLE_W +: SAMPLE_W]),

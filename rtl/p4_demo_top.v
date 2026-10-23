@@ -73,6 +73,7 @@ module p4_demo_top (
         .table_sel    (2'd0),
         .bend_q15     (16'd32768),
         .velocity     (8'd255),
+        .pluck        (1'b0),
         .note_on      (note_on),
         .note_off     (1'b0),
         .note_id      (note_id),
