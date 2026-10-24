@@ -49,19 +49,21 @@ module synth_top #(
     wire                         mix_valid;
 
     // ---- 音高弯音：所有声部乘同一个 Q15 系数 ----
-    // 放在这一层，voice / voice_osc 不用改；4 个 32×16 乘法正好用 DSP。
     wire [VOICES*PHASE_BITS-1:0] inc_bent_flat;
+    wire bend_scan_done;
 
-    genvar j;
-    generate
-        for (j = 0; j < VOICES; j = j + 1) begin : g_bend
-            // 32×16 的乘积必须用 48 位中间量承接：
-            // Verilog 中乘法结果宽度取两个操作数的最大宽度，直接写会截断。
-            wire [PHASE_BITS+15:0] bend_prod =
-                inc_flat[j*PHASE_BITS +: PHASE_BITS] * bend_q15;
-            assign inc_bent_flat[j*PHASE_BITS +: PHASE_BITS] = bend_prod >>> 15;
-        end
-    endgenerate
+    bend_scan #(
+        .VOICES     (VOICES),
+        .PHASE_BITS (PHASE_BITS)
+    ) u_bend_scan (
+        .clk           (clk),
+        .rst_n         (rst_n),
+        .sample_en     (sample_en),
+        .bend_q15      (bend_q15),
+        .inc_flat      (inc_flat),
+        .inc_bent_flat (inc_bent_flat),
+        .scan_done     (bend_scan_done)
+    );
 
     wavetable_arbiter #(
         .VOICES    (VOICES),
@@ -89,8 +91,7 @@ module synth_top #(
                 .PHASE_BITS (PHASE_BITS),
                 .ADDR_BITS  (ADDR_BITS),
                 .SAMPLE_W   (SAMPLE_W),
-                .LEVEL_W    (LEVEL_W),
-                .GAIN_W     (GAIN_W)
+                .LEVEL_W    (LEVEL_W)
             ) u_voice (
                 .clk           (clk),
                 .rst_n         (rst_n),
@@ -102,7 +103,6 @@ module synth_top #(
                 .sustain_level (sustain_level_flat[i*LEVEL_W +: LEVEL_W]),
                 .r_step        (r_step_flat[i*LEVEL_W +: LEVEL_W]),
                 .one_shot      (one_shot),
-                .gain_q15      (gain_flat[i*GAIN_W +: GAIN_W]),
                 .wave_addr     (wave_addr_flat[i*ADDR_BITS +: ADDR_BITS]),
                 .wave_sample   (wave_sample_flat[i*SAMPLE_W +: SAMPLE_W]),
                 .wave_valid    (wave_valid_flat[i]),
@@ -119,7 +119,10 @@ module synth_top #(
     ) u_mixer (
         .clk               (clk),
         .rst_n             (rst_n),
+        .sample_en         (sample_en),
         .voice_sample_flat (voice_sample_flat),
+        .voice_valid_flat  (wave_valid_flat),
+        .gain_flat         (gain_flat),
         // 归一化按"仍在发声"计数：gate 或 ADSR 释放未结束都算在响，
         // 避免最后一音松开时系数突变产生"咔"声。
         .sound_flat        (gate_flat | busy_flat),

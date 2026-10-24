@@ -41,36 +41,74 @@ module pitch_bend_map #(
 
     wire code_ok = (code >= CODE_MIN) && (code <= CODE_MAX);
 
-    // d > 0：code 比中位小 → 电压更高 → 摇杆往正方向
-    wire signed [17:0] d   = $signed({2'b00, center_code}) - $signed({2'b00, code});
-    wire        [17:0] mag = d[17] ? (~d + 18'd1) : d;
-    wire        [17:0] eff = (mag > {2'b00, DEADZONE}) ? (mag - {2'b00, DEADZONE}) : 18'd0;
+    // valid 是慢速 RC 采样脉冲；在内部展开为 5 级流水，避免“减法 +
+    // 18×16 乘法 + 限幅”压进一个 72 MHz 周期。
+    reg signed [17:0] d_q;
+    reg        [17:0] mag_q;
+    reg        [17:0] eff_q;
+    reg        [17:0] delta_q;
+    reg               sign_q1, sign_q2;
+    reg               invalid_q1;
+    reg v1, v2, v3, v4;
 
-    // Verilog 的乘法结果宽度 = 两个操作数的最大宽度；这里必须把中间结果
-    // 声明成足够宽（18+16=34 位），否则 1755×572 会被截断成 18 位。
-    wire [15:0] k_sel = d[17] ? K_L : K_R;
-    wire [33:0] prod  = eff * k_sel;
-    wire [17:0] delta = (eff == 18'd0) ? 18'd0 : (prod >> 8);
-
-    wire [16:0] sum_pos = {1'b0, 16'd32768} + {1'b0, delta[15:0]};
-    wire [16:0] sum_neg = {1'b0, 16'd32768} - {1'b0, delta[15:0]};
+    wire        [17:0] mag_next = d_q[17] ? (~d_q + 18'd1) : d_q;
+    wire        [17:0] eff_next =
+        (mag_q > {2'b00, DEADZONE}) ? (mag_q - {2'b00, DEADZONE}) : 18'd0;
+    wire        [15:0] k_sel = sign_q2 ? K_L : K_R;
+    wire        [33:0] prod  = eff_q * k_sel;
+    wire        [17:0] delta_next = (eff_q == 18'd0) ? 18'd0 : (prod >> 8);
+    wire        [16:0] sum_neg_q = 17'd32768 - {1'b0, delta_q[15:0]};
+    wire        [16:0] sum_pos_q = 17'd32768 + {1'b0, delta_q[15:0]};
 
     always @(posedge clk or negedge rst_n) begin
-        if (!rst_n)
+        if (!rst_n) begin
             bend_q15 <= 16'd32768;
-        // 只有"故障 / 越界"才强制回中
-        else if (fault || !code_ok)
-            bend_q15 <= 16'd32768;
-        // valid 是单周期脉冲：只在采样完成那一拍更新，其余时间保持
-        else if (valid) begin
-            if (eff == 18'd0)
-                bend_q15 <= 16'd32768;
-            else if (d[17])
-                bend_q15 <= (sum_neg < {1'b0, BEND_LO}) ? BEND_LO : sum_neg[15:0];
-            else
-                bend_q15 <= (sum_pos > {1'b0, BEND_HI}) ? BEND_HI : sum_pos[15:0];
+            d_q       <= 18'sd0;
+            mag_q     <= 18'd0;
+            eff_q     <= 18'd0;
+            delta_q   <= 18'd0;
+            sign_q1   <= 1'b0;
+            sign_q2   <= 1'b0;
+            invalid_q1 <= 1'b0;
+            v1 <= 1'b0;
+            v2 <= 1'b0;
+            v3 <= 1'b0;
+            v4 <= 1'b0;
+        end else begin
+            v1 <= valid;
+            v2 <= v1;
+            v3 <= v2;
+            v4 <= v3;
+
+            // d > 0：code 比中位小 → 电压更高 → 摇杆往正方向
+            if (valid) begin
+                d_q        <= $signed({2'b00, center_code}) -
+                              $signed({2'b00, code});
+                invalid_q1 <= fault || !code_ok;
+            end
+
+            if (v1) begin
+                mag_q   <= mag_next;
+                sign_q1 <= d_q[17];
+            end
+
+            if (v2) begin
+                eff_q   <= eff_next;
+                sign_q2 <= sign_q1;
+            end
+
+            if (v3)
+                delta_q <= delta_next;
+
+            if (v4) begin
+                if (invalid_q1 || (delta_q == 18'd0))
+                    bend_q15 <= 16'd32768;
+                else if (sign_q2)
+                    bend_q15 <= (sum_neg_q < {1'b0, BEND_LO}) ? BEND_LO : sum_neg_q[15:0];
+                else
+                    bend_q15 <= (sum_pos_q > {1'b0, BEND_HI}) ? BEND_HI : sum_pos_q[15:0];
+            end
         end
-        // valid=0：保持上一次的弯音值（关键：不能在这里回中）
     end
 
 endmodule

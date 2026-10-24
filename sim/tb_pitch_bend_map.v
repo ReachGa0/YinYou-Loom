@@ -37,7 +37,7 @@ module tb_pitch_bend_map;
             @(posedge clk); #1;          // 采样完成这一拍更新
             @(negedge clk);
             valid = 1'b0;                // 之后 valid 拉低，值必须保持
-            @(posedge clk); #1;
+            repeat (5) @(posedge clk); #1;
         end
     endtask
 

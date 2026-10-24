@@ -6,7 +6,10 @@ module tb_mixer;
 
     reg                           clk;
     reg                           rst_n;
+    reg                           sample_en;
     reg  [VOICES*SAMPLE_W-1:0]    voice_sample_flat;
+    reg  [VOICES-1:0]             voice_valid_flat;
+    reg  [VOICES*16-1:0]          gain_flat;
     reg  [VOICES-1:0]             gate_flat;
     reg                           scan_done;
     wire signed [SAMPLE_W-1:0]    mix_sample;
@@ -20,7 +23,10 @@ module tb_mixer;
     ) dut (
         .clk               (clk),
         .rst_n             (rst_n),
+        .sample_en         (sample_en),
         .voice_sample_flat (voice_sample_flat),
+        .voice_valid_flat  (voice_valid_flat),
+        .gain_flat         (gain_flat),
         .sound_flat        (gate_flat),
         .scan_done         (scan_done),
         .mix_sample        (mix_sample),
@@ -30,7 +36,18 @@ module tb_mixer;
     always #5 clk = ~clk;
 
     task latch_mix;
+        integer j;
         begin
+            @(negedge clk);
+            sample_en = 1'b1;
+            @(negedge clk);
+            sample_en = 1'b0;
+            for (j = 0; j < VOICES; j = j + 1) begin
+                @(negedge clk);
+                voice_valid_flat[j] = 1'b1;
+                @(negedge clk);
+                voice_valid_flat[j] = 1'b0;
+            end
             @(negedge clk);
             scan_done = 1'b1;
             @(negedge clk);
@@ -62,8 +79,11 @@ module tb_mixer;
     initial begin
         clk               = 1'b0;
         rst_n             = 1'b0;
+        sample_en         = 1'b0;
         scan_done         = 1'b0;
         voice_sample_flat = {VOICES*SAMPLE_W{1'b0}};
+        voice_valid_flat  = {VOICES{1'b0}};
+        gain_flat         = {VOICES{16'd32768}};
         gate_flat         = {VOICES{1'b0}};
         failures          = 0;
 

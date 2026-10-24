@@ -13,7 +13,7 @@ New-Item -ItemType Directory -Force sim/out | Out-Null
 Write-Host "[1/9] 编译 testbench ..."
 iverilog -I rtl/common -g2012 -o sim/out/tb_voice_osc.vvp `
     sim/tb_voice_osc.v `
-    rtl/synth/synth_top.v rtl/synth/mixer.v `
+    rtl/synth/synth_top.v rtl/synth/bend_scan.v rtl/synth/mixer.v `
     rtl/synth/wavetable_arbiter.v rtl/synth/wavetable_bank.v rtl/synth/wavetable_rom.v `
     rtl/synth/voice.v rtl/synth/voice_osc.v rtl/synth/voice_adsr.v
 if ($LASTEXITCODE -ne 0) { throw "iverilog 编译失败" }
@@ -33,7 +33,7 @@ if ($LASTEXITCODE -ne 0) { throw "spectrum 分析失败" }
 Write-Host "[5/9] 编译 voice 测试台 ..."
 iverilog -I rtl/common -g2012 -o sim/out/tb_voice.vvp `
     sim/tb_voice.v `
-    rtl/synth/synth_top.v rtl/synth/mixer.v `
+    rtl/synth/synth_top.v rtl/synth/bend_scan.v rtl/synth/mixer.v `
     rtl/synth/wavetable_arbiter.v rtl/synth/wavetable_bank.v rtl/synth/wavetable_rom.v `
     rtl/synth/voice.v rtl/synth/voice_osc.v rtl/synth/voice_adsr.v
 if ($LASTEXITCODE -ne 0) { throw "iverilog 编译 tb_voice 失败" }
@@ -47,7 +47,7 @@ if ($LASTEXITCODE -ne 0) { throw "adsr_check 未通过" }
 Write-Host "[7/9] 编译 4 声部和弦测试台 ..."
 iverilog -I rtl/common -g2012 -o sim/out/tb_p4_chord.vvp `
     sim/tb_p4_chord.v `
-    rtl/synth/synth_engine.v rtl/synth/synth_top.v rtl/synth/mixer.v `
+    rtl/synth/synth_engine.v rtl/synth/synth_top.v rtl/synth/bend_scan.v rtl/synth/mixer.v `
     rtl/synth/wavetable_arbiter.v rtl/synth/wavetable_bank.v rtl/synth/wavetable_rom.v `
     rtl/synth/voice.v rtl/synth/voice_osc.v rtl/synth/voice_adsr.v rtl/synth/voice_alloc.v
 if ($LASTEXITCODE -ne 0) { throw "iverilog 编译 tb_p4_chord 失败" }

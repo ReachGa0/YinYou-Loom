@@ -2,8 +2,7 @@ module voice #(
     parameter PHASE_BITS = 32,
     parameter ADDR_BITS  = 12,
     parameter SAMPLE_W   = 16,
-    parameter LEVEL_W    = 16,
-    parameter GAIN_W     = 16
+    parameter LEVEL_W    = 16
 ) (
     input  wire                       clk,
     input  wire                       rst_n,
@@ -15,7 +14,6 @@ module voice #(
     input  wire [LEVEL_W-1:0]         sustain_level,
     input  wire [LEVEL_W-1:0]         r_step,
     input  wire                       one_shot,       // 1 = 拨弦（一次性衰减）
-    input  wire [GAIN_W-1:0]          gain_q15,       // Q1.15, 32768 = 1.0
 
     output wire [ADDR_BITS-1:0]       wave_addr,
     input  wire signed [SAMPLE_W-1:0] wave_sample,
@@ -73,17 +71,13 @@ module voice #(
     wire signed [31:0] env_product = osc_ext * env_ext;
 
     wire signed [SAMPLE_W-1:0] env_sample = env_product[31:16];
-    // 通用 Q15 增益（32768 = 1.0）。
-    // 原来是一个只认 4 个 A 加权常量的 case，其它值（例如力度算出的
-    // 16384/24576）会落到 default=1.0，导致力度完全不起作用。
-    wire signed [31:0] gain_prod = env_sample * $signed({1'b0, gain_q15});
-    wire signed [SAMPLE_W-1:0] mixed_sample = gain_prod[30:15];   // >>15
-
-    // 一级输出流水：打断 ADSR -> 乘法/增益 -> mixer 的长组合路径。
+    // 逐音增益统一移到 mixer 的顺序累加阶段，只例化一个共享乘法器。
+    // 本模块输出“波形 × ADSR 包络”，不再复制 32 份 Q15 增益乘法。
+    // 一级输出流水：打断 ADSR -> 包络乘法 -> mixer 的长组合路径。
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n)
             sample <= {SAMPLE_W{1'b0}};
         else if (wave_valid)
-            sample <= mixed_sample;
+            sample <= env_sample;
     end
 endmodule

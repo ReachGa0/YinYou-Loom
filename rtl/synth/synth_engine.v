@@ -58,10 +58,49 @@ module synth_engine #(
         end
     endfunction
 
-    // 力度：音色 A 加权系数 × velocity/255（24 位中间量，避免乘法被截断）
-    wire [15:0] a_gain   = gain_for_note(note_id);
-    wire [23:0] gain_vel = a_gain * velocity;
-    wire [15:0] note_gain = gain_vel[23:8];
+    // note-on 事件先寄存一级；逐音增益乘法再寄存一级后送入分配器。
+    // 音符事件远慢于 48kHz，多一拍不会吞掉单周期脉冲。
+    reg                note_on_q;
+    reg                note_off_q;
+    reg                note_on_q2;
+    reg                note_off_q2;
+    reg [NOTE_ID_W-1:0] note_id_q;
+    reg [PHASE_BITS-1:0] note_inc_q;
+    reg [7:0]          velocity_q;
+    reg [NOTE_ID_W-1:0] note_id_q2;
+    reg [PHASE_BITS-1:0] note_inc_q2;
+
+    wire [15:0] a_gain   = gain_for_note(note_id_q);
+    wire [23:0] gain_vel = a_gain * velocity_q;
+    reg [15:0] note_gain_q;
+
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            note_on_q  <= 1'b0;
+            note_off_q <= 1'b0;
+            note_on_q2 <= 1'b0;
+            note_off_q2 <= 1'b0;
+            note_id_q  <= {NOTE_ID_W{1'b0}};
+            note_inc_q <= {PHASE_BITS{1'b0}};
+            velocity_q <= 8'd255;
+            note_id_q2 <= {NOTE_ID_W{1'b0}};
+            note_inc_q2 <= {PHASE_BITS{1'b0}};
+            note_gain_q <= 16'd32768;
+        end else begin
+            note_on_q   <= note_on;
+            note_off_q  <= note_off;
+            note_id_q   <= note_id;
+            note_inc_q  <= note_inc;
+            if (note_on)
+                velocity_q <= velocity;
+
+            note_on_q2  <= note_on_q;
+            note_off_q2 <= note_off_q;
+            note_id_q2  <= note_id_q;
+            note_inc_q2 <= note_inc_q;
+            note_gain_q <= gain_vel[23:8];
+        end
+    end
 
     // 拨弦：sustain=0、D/R 放慢到约 340ms，形成自然衰减；
     // 持续模式：保持原来的 A/D/S/R。
@@ -81,11 +120,11 @@ module synth_engine #(
     ) u_alloc (
         .clk             (clk),
         .rst_n           (rst_n),
-        .note_on         (note_on),
-        .note_off        (note_off),
-        .note_id         (note_id),
-        .note_inc        (note_inc),
-        .note_gain       (note_gain),
+        .note_on         (note_on_q2),
+        .note_off        (note_off_q2),
+        .note_id         (note_id_q2),
+        .note_inc        (note_inc_q2),
+        .note_gain       (note_gain_q),
         .voice_busy      (voice_busy),
         .voice_inc_flat  (inc_flat),
         .voice_gain_flat (gain_flat),

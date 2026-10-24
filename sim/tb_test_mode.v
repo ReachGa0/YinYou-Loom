@@ -18,7 +18,7 @@
 //
 // 输出：sim/out/test_mode_tones.txt（4800 点）
 //       交给 pcm2wav.py + spectrum_peaks.py 数出 4 条谱线：
-//       433.59375 / 527.34375 / 656.25 / 785.15625 Hz
+//       433.59375 / 480.46875 / 503.90625 / 550.78125 Hz
 // ============================================================
 
 module tb_test_mode;
@@ -231,7 +231,7 @@ module tb_test_mode;
             $display("RESULT: %0d FAIL", failures);
 
         $display("INFO: dumped %0d samples to sim/out/test_mode_tones.txt", DUMP_LEN);
-        $display("INFO: expected peaks = 433.59375 / 527.34375 / 656.25 / 785.15625 Hz");
+        $display("INFO: expected peaks = 433.59375 / 480.46875 / 503.90625 / 550.78125 Hz");
 
         $finish;
     end

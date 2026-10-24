@@ -15,7 +15,11 @@
         <File path="../../rtl/common/frac_div.v" type="file.verilog" enable="1"/>
         <File path="../../rtl/input/key_scan.v" type="file.verilog" enable="1"/>
         <File path="../../rtl/input/rc_adc.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/input/joy_filter.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/input/expression_map.v" type="file.verilog" enable="1"/>
         <File path="../../rtl/input/pitch_bend_map.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/test/test_mode_router.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/test/test_mode.v" type="file.verilog" enable="1"/>
         <File path="../../rtl/synth/wavetable_rom.v" type="file.verilog" enable="1"/>
         <File path="../../rtl/synth/wavetable_bank.v" type="file.verilog" enable="1"/>
         <File path="../../rtl/synth/wavetable_arbiter.v" type="file.verilog" enable="1"/>
@@ -25,6 +29,7 @@
         <File path="../../rtl/synth/voice_alloc.v" type="file.verilog" enable="1"/>
         <File path="../../rtl/synth/mixer.v" type="file.verilog" enable="1"/>
         <File path="../../rtl/synth/synth_top.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/synth/bend_scan.v" type="file.verilog" enable="1"/>
         <File path="../../rtl/synth/synth_engine.v" type="file.verilog" enable="1"/>
         <File path="../../rtl/synth/chorus.v" type="file.verilog" enable="1"/>
         <File path="../../rtl/io/i2s_tx.v" type="file.verilog" enable="1"/>

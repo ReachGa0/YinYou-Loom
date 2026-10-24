@@ -14,19 +14,19 @@
 //   3. 频率取 k << 20（32 位相位累加器 + 4096 点 FFT）：音高精确落在
 //      48000/4096 = 11.71875 Hz 的栅格上，相干采样、零调谐误差；
 //      各 k 之间互不成整数倍，分析带宽内不会出现谐波重叠。
-//   4. note_id 从 7'd101 起：避开 synth_engine 中 gain_for_note 的
+//   4. note_id 从 7'd80 起：避开 synth_engine 中 gain_for_note 的
 //      C4/E4/G4/A4/B4 表项，得到统一增益 32768，
 //      不让 A 加权补偿影响各谱峰的相对幅度。
 //   5. 起音/释放都在相邻时钟拍内连续发出（每个脉冲之间只空一拍），
 //      于是 N 个 gate 落在同一个 48kHz 采样周期里，mixer 的归一化系数
 //      只变化一次；配合每个声部自己的 ADSR 起音，起音与释放都没有台阶声。
-//   6. N_TONES > 4 时，除本文件的频率表外还需扩展 mixer 的归一化档位
-//      （见 docs/04 P4S 与工程交接记录）。
+//   6. 频率表提供 32 个质数 k；质数之间不存在非平凡整数倍关系，
+//      可避免整数倍谐波重叠。
 // ============================================================
 
 module test_mode #(
     parameter CLK_MHZ = 72,
-    parameter N_TONES = 4,        // 同时发声的固定频率数
+    parameter N_TONES = 4,        // 同时发声的固定频率数，最大 32
     parameter HOLD_US = 500       // enable 后等稳定再起音
 ) (
     input  wire        clk,
@@ -64,14 +64,38 @@ module test_mode #(
         input [5:0] i;
         begin
             case (i)
-                6'd0: inc_for_index = 32'd37  << 20;  //  433.59375 Hz（A4 附近）
-                6'd1: inc_for_index = 32'd45  << 20;  //  527.34375 Hz（C5 附近）
-                6'd2: inc_for_index = 32'd56  << 20;  //  656.25000 Hz（E5 附近）
-                6'd3: inc_for_index = 32'd67  << 20;  //  785.15625 Hz（G5 附近）
-                6'd4: inc_for_index = 32'd79  << 20;  //  925.78125 Hz
-                6'd5: inc_for_index = 32'd88  << 20;  // 1031.25000 Hz
-                6'd6: inc_for_index = 32'd97  << 20;  // 1136.71875 Hz
-                6'd7: inc_for_index = 32'd109 << 20;  // 1277.34375 Hz
+                6'd0: inc_for_index = 32'd37  << 20;  //  433.59375 Hz
+                6'd1: inc_for_index = 32'd41  << 20;  //  480.46875 Hz
+                6'd2: inc_for_index = 32'd43  << 20;  //  503.90625 Hz
+                6'd3: inc_for_index = 32'd47  << 20;  //  550.78125 Hz
+                6'd4: inc_for_index = 32'd53  << 20;  //  621.09375 Hz
+                6'd5: inc_for_index = 32'd59  << 20;  //  691.40625 Hz
+                6'd6: inc_for_index = 32'd61  << 20;  //  714.84375 Hz
+                6'd7: inc_for_index = 32'd67  << 20;  //  785.15625 Hz
+                6'd8: inc_for_index = 32'd71  << 20;  //  832.03125 Hz
+                6'd9: inc_for_index = 32'd73  << 20;  //  855.46875 Hz
+                6'd10: inc_for_index = 32'd79 << 20;  //  925.78125 Hz
+                6'd11: inc_for_index = 32'd83 << 20;  //  972.65625 Hz
+                6'd12: inc_for_index = 32'd89 << 20;  // 1042.96875 Hz
+                6'd13: inc_for_index = 32'd97 << 20;  // 1136.71875 Hz
+                6'd14: inc_for_index = 32'd101 << 20; // 1183.59375 Hz
+                6'd15: inc_for_index = 32'd103 << 20; // 1207.03125 Hz
+                6'd16: inc_for_index = 32'd107 << 20; // 1253.90625 Hz
+                6'd17: inc_for_index = 32'd109 << 20; // 1277.34375 Hz
+                6'd18: inc_for_index = 32'd113 << 20; // 1324.21875 Hz
+                6'd19: inc_for_index = 32'd127 << 20; // 1488.28125 Hz
+                6'd20: inc_for_index = 32'd131 << 20; // 1535.15625 Hz
+                6'd21: inc_for_index = 32'd137 << 20; // 1605.46875 Hz
+                6'd22: inc_for_index = 32'd139 << 20; // 1628.90625 Hz
+                6'd23: inc_for_index = 32'd149 << 20; // 1746.09375 Hz
+                6'd24: inc_for_index = 32'd151 << 20; // 1769.53125 Hz
+                6'd25: inc_for_index = 32'd157 << 20; // 1839.84375 Hz
+                6'd26: inc_for_index = 32'd163 << 20; // 1910.15625 Hz
+                6'd27: inc_for_index = 32'd167 << 20; // 1957.03125 Hz
+                6'd28: inc_for_index = 32'd173 << 20; // 2027.34375 Hz
+                6'd29: inc_for_index = 32'd179 << 20; // 2097.65625 Hz
+                6'd30: inc_for_index = 32'd181 << 20; // 2121.09375 Hz
+                6'd31: inc_for_index = 32'd191 << 20; // 2238.28125 Hz
                 default: inc_for_index = 32'd37 << 20;
             endcase
         end
@@ -90,7 +114,7 @@ module test_mode #(
             gap_wait <= 1'b0;
             note_on  <= 1'b0;
             note_off <= 1'b0;
-            note_id  <= 7'd101;
+            note_id  <= 7'd80;
             note_inc <= 32'd37 << 20;
         end else begin
             note_on  <= 1'b0;      // 默认拉低，保证是单周期脉冲
@@ -126,7 +150,7 @@ module test_mode #(
                         // 相邻音只隔一拍 → N 个 gate 落在同一个采样周期内，
                         // mixer 归一化只变化一次，起音无台阶声。
                         note_on  <= 1'b1;                // 单周期脉冲
-                        note_id  <= 7'd101 + idx;
+                        note_id  <= 7'd80 + idx;
                         note_inc <= inc_for_index(idx);
                         assigned <= idx + 6'd1;
                         idx      <= idx + 6'd1;
@@ -149,7 +173,7 @@ module test_mode #(
                         gap_wait <= 1'b0;
                     end else begin
                         note_off <= 1'b1;                // 单周期脉冲
-                        note_id  <= 7'd101 + idx;
+                        note_id  <= 7'd80 + idx;
                         idx      <= idx + 6'd1;
                         gap_wait <= 1'b1;
                     end

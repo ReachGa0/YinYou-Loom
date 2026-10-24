@@ -86,6 +86,7 @@ module tft_ui_top (
         .st_mode    (st_mode),
         .st_note    (st_note),
         .st_voices  (st_voices),
+        .st_test    (1'b0),
         .st_key_root(7'd0),                 // 调式占位（旋钮未接）
         .win_start  (win_start),
         .win_x0     (win_x0),

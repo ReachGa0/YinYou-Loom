@@ -78,12 +78,35 @@ Test-Suite "tb_wavetable_arbiter_8" @(
     "rtl/synth/wavetable_bank.v",
     "rtl/synth/wavetable_rom.v") "-Ptb_wavetable_arbiter.VOICES=8"
 
+Test-Suite "tb_wavetable_arbiter_32" @(
+    "sim/tb_wavetable_arbiter.v",
+    "rtl/synth/wavetable_arbiter.v",
+    "rtl/synth/wavetable_bank.v",
+    "rtl/synth/wavetable_rom.v") "-Ptb_wavetable_arbiter.VOICES=32"
+
 Test-Suite "tb_voice_alloc" @("sim/tb_voice_alloc.v", "rtl/synth/voice_alloc.v")
+Test-Suite "tb_voice_alloc_32" @("sim/tb_voice_alloc32.v", "rtl/synth/voice_alloc.v")
 Test-Suite "tb_mixer" @("sim/tb_mixer.v", "rtl/synth/mixer.v")
+Test-Suite "tb_mixer_32" @("sim/tb_mixer32.v", "rtl/synth/mixer.v")
+Test-Suite "tb_bend_scan" @("sim/tb_bend_scan.v", "rtl/synth/bend_scan.v")
 Test-Suite "tb_synth_engine" @(
     "sim/tb_synth_engine.v",
     "rtl/synth/synth_engine.v",
     "rtl/synth/synth_top.v",
+    "rtl/synth/bend_scan.v",
+    "rtl/synth/mixer.v",
+    "rtl/synth/wavetable_arbiter.v",
+    "rtl/synth/wavetable_bank.v",
+    "rtl/synth/wavetable_rom.v",
+    "rtl/synth/voice.v",
+    "rtl/synth/voice_osc.v",
+    "rtl/synth/voice_adsr.v",
+    "rtl/synth/voice_alloc.v")
+Test-Suite "tb_synth_engine_32" @(
+    "sim/tb_synth_engine32.v",
+    "rtl/synth/synth_engine.v",
+    "rtl/synth/synth_top.v",
+    "rtl/synth/bend_scan.v",
     "rtl/synth/mixer.v",
     "rtl/synth/wavetable_arbiter.v",
     "rtl/synth/wavetable_bank.v",
@@ -109,6 +132,7 @@ Test-Suite "tb_p5_baseline" @(
     "rtl/input/input_map.v",
     "rtl/synth/synth_engine.v",
     "rtl/synth/synth_top.v",
+    "rtl/synth/bend_scan.v",
     "rtl/synth/mixer.v",
     "rtl/synth/wavetable_arbiter.v",
     "rtl/synth/wavetable_bank.v",
@@ -121,7 +145,11 @@ Test-Suite "tb_p5_baseline" @(
 Test-Suite "tb_sonar_range" @("sim/tb_sonar_range.v", "rtl/input/sonar_range.v")
 
 Test-Suite "tb_rc_adc" @("sim/tb_rc_adc.v", "rtl/input/rc_adc.v")
+Test-Suite "tb_joy_filter" @("sim/tb_joy_filter.v", "rtl/input/joy_filter.v")
+Test-Suite "tb_expression_map" @("sim/tb_expression_map.v", "rtl/input/expression_map.v")
 Test-Suite "tb_pitch_bend_map" @("sim/tb_pitch_bend_map.v", "rtl/input/pitch_bend_map.v")
+Test-Suite "tb_test_mode_router" @(
+    "sim/tb_test_mode_router.v", "rtl/test/test_mode_router.v")
 
 Write-Host ""
 Write-Host "===== 3. I2S 发送器 ====="
@@ -159,6 +187,61 @@ Test-Suite "tb_ui_render" @(
 
 Test-Suite "tb_wave_capture" @(
     "sim/tb_wave_capture.v", "rtl/display/wave_capture.v")
+
+Test-Suite "tb_test_mode" @(
+    "sim/tb_test_mode.v",
+    "rtl/test/test_mode.v",
+    "rtl/synth/synth_engine.v",
+    "rtl/synth/synth_top.v",
+    "rtl/synth/bend_scan.v",
+    "rtl/synth/mixer.v",
+    "rtl/synth/wavetable_arbiter.v",
+    "rtl/synth/wavetable_bank.v",
+    "rtl/synth/wavetable_rom.v",
+    "rtl/synth/voice.v",
+    "rtl/synth/voice_osc.v",
+    "rtl/synth/voice_adsr.v",
+    "rtl/synth/voice_alloc.v")
+
+Test-Suite "tb_test_mode_32" @(
+    "sim/tb_test_mode32.v",
+    "rtl/test/test_mode.v",
+    "rtl/synth/synth_engine.v",
+    "rtl/synth/synth_top.v",
+    "rtl/synth/bend_scan.v",
+    "rtl/synth/mixer.v",
+    "rtl/synth/wavetable_arbiter.v",
+    "rtl/synth/wavetable_bank.v",
+    "rtl/synth/wavetable_rom.v",
+    "rtl/synth/voice.v",
+    "rtl/synth/voice_osc.v",
+    "rtl/synth/voice_adsr.v",
+    "rtl/synth/voice_alloc.v")
+
+$script:total++
+$tones32 = @(
+    433.59375, 480.46875, 503.90625, 550.78125,
+    621.09375, 691.40625, 714.84375, 785.15625,
+    832.03125, 855.46875, 925.78125, 972.65625,
+    1042.96875, 1136.71875, 1183.59375, 1207.03125,
+    1253.90625, 1277.34375, 1324.21875, 1488.28125,
+    1535.15625, 1605.46875, 1628.90625, 1746.09375,
+    1769.53125, 1839.84375, 1910.15625, 1957.03125,
+    2027.34375, 2097.65625, 2121.09375, 2238.28125)
+& $Python tools/pcm2wav.py sim/out/test_mode_tones32.txt sim/out/test_mode_tones32.wav | Out-Null
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "  [FAIL] test_mode_32_spectrum —— WAV 转换失败"
+    $script:failed++
+} else {
+    $spectrumLog = & $Python tools/spectrum_peaks.py sim/out/test_mode_tones32.wav @tones32 2>&1 | Out-String
+    if ($spectrumLog -match "RESULT: ALL PASS") {
+        Write-Host "  [PASS] test_mode_32_spectrum"
+    } else {
+        Write-Host "  [FAIL] test_mode_32_spectrum"
+        Write-Host $spectrumLog
+        $script:failed++
+    }
+}
 
 Write-Host ""
 Write-Host "========================================"

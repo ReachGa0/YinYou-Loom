@@ -36,6 +36,7 @@ module tb_ui_render;
     reg [1:0] st_mode   = 2'd0;
     reg [6:0] st_note   = 7'd60;
     reg [2:0] st_voices = 3'd2;              // 幅度 = voices×10 = 20px
+    reg       st_test   = 1'b0;
     reg [6:0] st_key_root = 7'd0;
 
     // ---- 渲染器接口 ----
@@ -44,6 +45,9 @@ module tb_ui_render;
     wire [15:0] px_data;
     wire [8:0]  px_x;
     wire [7:0]  px_y;
+    wire signed [17:0] live_delta =
+        $signed({9'b0, px_x}) - 18'sd160;
+    wire signed [15:0] live_test_sample = live_delta << 7;
     reg         busy = 0;
     reg         done = 0;
     wire [2:0]  dbg_region;
@@ -51,9 +55,10 @@ module tb_ui_render;
     ui_render #(.FONT_INIT ("data/fonts/font8x16.hex")) u_ui (
         .clk (clk), .rst_n (rst_n),
         .st_timbre (st_timbre), .st_fx (st_fx), .st_mode (st_mode),
-        .st_note (st_note), .st_voices (st_voices), .st_key_root (st_key_root),
-        // 真实采样通路在仿真里不接：live_valid=0 → 走合成波形兜底
-        .live_valid (1'b0), .live_bank (1'b0), .live_data (16'sd0),
+        .st_note (st_note), .st_voices (st_voices), .st_test (st_test),
+        .st_key_root (st_key_root),
+        // 用低幅斜线模拟 wave_capture 的真实采样读口。
+        .live_valid (1'b1), .live_bank (1'b0), .live_data (live_test_sample),
         .capture_trig (), .rd_bank_sel (), .rd_addr (),
         .dbg_x_code (16'd0), .dbg_y_code (16'd0),
         .dbg_x_fault (1'b0), .dbg_y_fault (1'b0),
@@ -79,6 +84,7 @@ module tb_ui_render;
     reg [2:0]  dst = 3'd0;                   // 0 空闲 1 起像素 2 等 3 采样
 
     reg [15:0] frame [0:76799];              // 320×240 整帧
+    reg [7:0]  font_ref [0:1535];            // (ASCII-0x20)*16 + row
     integer    idx;
 
     integer    tx_cnt = 0;
@@ -87,10 +93,13 @@ module tb_ui_render;
     integer    tx_pix [0:15];                // 每个事务的像素数
 
     reg        saw_tone_tx = 1'b0;           // 出现过 TONE 选项区事务
+    reg        saw_scale_tx = 1'b0;          // 出现过右上角状态区事务
     integer    wave_done_cnt = 0;            // 波形活动带事务完成次数
     always @(posedge clk) begin
         if (rst_n && (dst == 3'd0) && win_start && (dbg_region == 3'd2))
             saw_tone_tx <= 1'b1;
+        if (rst_n && (dst == 3'd0) && win_start && (dbg_region == 3'd5))
+            saw_scale_tx <= 1'b1;
         if (rst_n && done && (dbg_region == 3'd1))
             wave_done_cnt <= wave_done_cnt + 1;
     end
@@ -179,15 +188,44 @@ module tb_ui_render;
         end
     endtask
 
+    task check_glyph;
+        input integer x0;
+        input integer y0;
+        input [7:0] text_char;
+        input [15:0] fg_color;
+        input [15:0] bg_color;
+        integer rr, cc, errors, bit_on;
+        begin
+            errors = 0;
+            for (rr = 0; rr < 16; rr = rr + 1)
+                for (cc = 0; cc < 8; cc = cc + 1) begin
+                    bit_on = (font_ref[(text_char - 8'h20)*16 + rr] >>
+                              (7 - cc)) & 1'b1;
+                    if (frame[(y0+rr)*320 + x0+cc] !==
+                        (bit_on ? fg_color : bg_color))
+                        errors = errors + 1;
+                end
+            if (errors == 0)
+                pass_cnt = pass_cnt + 1;
+            else begin
+                $display("  FAIL  glyph '%c' at (%0d,%0d): %0d pixel mismatch",
+                         text_char, x0, y0, errors);
+                fail_cnt = fail_cnt + 1;
+            end
+        end
+    endtask
+
     // ------------------------------------------------------------
     // 主流程
     // ------------------------------------------------------------
     integer x, y, cnt, col_lit, k;
     integer hdr_cnt, hint_cnt, scale_cnt, wave_cnt, sel_cnt, txt_cnt;
     integer band_lit_max, band_lit_min;
+    integer wave_y_min, wave_y_max;
     integer fout;
 
     initial begin
+        $readmemh("data/fonts/font8x16.hex", font_ref);
         rst_n = 0;
         repeat (4) @(posedge clk);
         rst_n = 1;
@@ -218,8 +256,22 @@ module tb_ui_render;
         chk16("TONE.unsel.row2",  frame[166*320 + 100], C_BG);
         chk16("FX.sel.row1",      frame[150*320 + 210], C_SEL_BG);
         chk16("MODE.sel.row1",    frame[150*320 + 315], C_SEL_BG);
-        chk16("wave@x0",          frame[63*320 + 0],    C_WAVE);     // phase0=0 → 过零点
         chk16("wave.band.above",  frame[25*320 + 0],    C_BG);
+
+        // 逐字符核对字模，防止“文字像素总数正确但字本身错位”。
+        $display("");
+        $display("=== 逐字符字模检查 ===");
+        check_glyph(3, 130, 8'h54, C_HDR, C_BG);
+        check_glyph(3, 146, 8'h53, C_SEL_TX, C_SEL_BG);       // SINE
+        check_glyph(3, 162, 8'h53, C_TXT, C_BG);              // SQUARE
+        check_glyph(110, 130, 8'h46, C_HDR, C_BG);            // FX
+        check_glyph(110, 146, 8'h44, C_SEL_TX, C_SEL_BG);     // DRY
+        check_glyph(110, 162, 8'h43, C_TXT, C_BG);            // CHORUS
+        check_glyph(217, 130, 8'h4D, C_HDR, C_BG);            // MODE
+        check_glyph(217, 146, 8'h4F, C_SEL_TX, C_SEL_BG);     // ONE
+        check_glyph(217, 162, 8'h54, C_TXT, C_BG);            // TRI
+        check_glyph(3, 212, 8'h53, C_HINT, C_BG);             // S1
+        check_glyph(276, 4, 8'h43, C_SCALE, C_BG);            // C MAJ
 
         // ---- 点统计：文字区确实有字 ----
         $display("");
@@ -241,23 +293,26 @@ module tb_ui_render;
         chkge("调式字符像素", scale_cnt, 10);
         chkge("调式框黑底",   txt_cnt,   200);
 
-        // ---- 波形形状：活动带内每列恰好 3 个亮点 ----
+        // ---- 真实采样波形：应落在活动带内并形成连续曲线 ----
         $display("");
-        $display("=== 波形形状（活动带每列 3 个亮点）===");
+        $display("=== 真实采样波形形状 ===");
         wave_cnt = 0; band_lit_max = 0; band_lit_min = 999;
+        wave_y_min = 999; wave_y_max = 0;
         for (x = 0; x <= 319; x = x + 1) begin
             col_lit = 0;
             for (y = 21; y <= 105; y = y + 1)
                 if (frame[y*320+x] == C_WAVE) begin
                     col_lit = col_lit + 1;
                     wave_cnt = wave_cnt + 1;
+                    if (y < wave_y_min) wave_y_min = y;
+                    if (y > wave_y_max) wave_y_max = y;
                 end
             if (col_lit > band_lit_max) band_lit_max = col_lit;
             if (col_lit < band_lit_min) band_lit_min = col_lit;
         end
-        chkn("每列亮点上限", band_lit_max, 3);
-        chkn("每列亮点下限", band_lit_min, 3);
-        chkge("波形总亮点数", wave_cnt, 900);          // ≈320×3
+        chkge("每列亮点下限", band_lit_min, 2);
+        chkge("波形总亮点数", wave_cnt, 600);
+        chkge("真实波形纵向跨度", wave_y_max - wave_y_min, 30);
 
         // ---- 事务 1：波形活动带 ----
         $display("");
@@ -289,22 +344,24 @@ module tb_ui_render;
         chk16("TONE.sel.row2",    frame[166*320 + 100], C_SEL_BG);
         chk16("TONE.unsel.row1",  frame[150*320 + 100], C_BG);
 
-        // ---- 方波垂线：等一帧波形带重画完（此时音色已是方波）----
+        // ---- 真实波形持续刷新，不依赖音色占位波形 ----
         $display("");
-        $display("=== 方波垂线检查 ===");
+        $display("=== 真实波形刷新检查 ===");
         k = wave_done_cnt;
         wait (wave_done_cnt > k);
         wait (dst == 3'd0);
         repeat (4) @(posedge clk);
-        band_lit_max = 0;
-        for (x = 0; x <= 319; x = x + 1) begin
-            col_lit = 0;
-            for (y = 21; y <= 105; y = y + 1)
-                if (frame[y*320+x] == C_WAVE) col_lit = col_lit + 1;
-            if (col_lit > band_lit_max) band_lit_max = col_lit;
-        end
-        // 幅度 = voices×10 = 20px → 跳变列应有 2×20+1 ≈ 41 个亮点
-        chkge("方波跳变列竖直段", band_lit_max, 35);
+        chkge("持续刷新波形带", wave_done_cnt, k + 1);
+
+        // ---- 进入 R3 → 右上角 TEST 状态区应事件式重画 ----
+        $display("");
+        $display("=== R3 状态区 ===");
+        st_test = 1'b1;
+        wait (saw_scale_tx);
+        wait (dst == 3'd0);
+        repeat (4) @(posedge clk);
+        chkn("R3 TEST 状态区事务", saw_scale_tx, 1);
+        check_glyph(276, 4, 8'h54, C_SCALE, C_BG);            // TEST
 
         // ---- 导出整帧做 PNG ----
         fout = $fopen("sim/out/ui_frame.txt", "w");

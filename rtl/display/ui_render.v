@@ -46,6 +46,7 @@ module ui_render #(
     input  wire [1:0]  st_mode,        // 0=ONE  1=TRI
     input  wire [6:0]  st_note,        // 当前发声音符 → 波长
     input  wire [2:0]  st_voices,      // 同时发声数 0..4 → 幅度
+    input  wire        st_test,        // 1 = R3 测试模式
     input  wire [6:0]  st_key_root,    // 调式占位（本轮不用）
 
     // ---- 真实采样显示（波形带）----
@@ -131,6 +132,7 @@ module ui_render #(
     localparam [95:0] S_HINT1 = "S2 FX       ";
     localparam [95:0] S_HINT2 = "SW MODE     ";
     localparam [95:0] S_SCALE = "C MAJ       ";
+    localparam [95:0] S_TEST  = "TEST        ";
 
     // ------------------------------------------------------------
     // 64 点正弦表（sin(2πi/64)×127）
@@ -190,6 +192,7 @@ module ui_render #(
         input [1:0] col;
         input [2:0] line;
         input [3:0] idx;
+        input       test_mode;
         reg   [4:0] bi;
         begin
             bi = 5'd11 - {1'b0, idx};
@@ -221,7 +224,8 @@ module ui_render #(
                     3'd5: ui_char = S_HINT2[8*bi +: 8];
                     default: ui_char = 8'h20;
                 endcase
-                default: ui_char = S_SCALE[8*bi +: 8];      // 调式占位
+                default: ui_char = test_mode ? S_TEST[8*bi +: 8]
+                                             : S_SCALE[8*bi +: 8];
             endcase
         end
     endfunction
@@ -232,18 +236,21 @@ module ui_render #(
     reg [1:0] r_timbre, r_fx, r_mode;
     reg [6:0] r_note;
     reg [2:0] r_voices;
+    reg       r_test;
     reg       r_bank;          // 本帧读的采样 bank
     reg       r_live;          // 本帧是否用真实采样
 
-    reg tone_dirty, fx_dirty, mode_dirty;
-    reg mode_dirty_clr, fx_dirty_clr, tone_dirty_clr;
+    reg tone_dirty, fx_dirty, mode_dirty, test_dirty;
+    reg mode_dirty_clr, fx_dirty_clr, tone_dirty_clr, test_dirty_clr;
     reg frame_wave_done;           // 波形带事务完成脉冲（调度器产生，相位推进用）
 
     always @(posedge clk) begin
         if (!rst_n) begin
             r_timbre <= 2'd0; r_fx <= 2'd0; r_mode <= 2'd0;
             r_note <= 7'd60;  r_voices <= 3'd0;
+            r_test <= 1'b0;
             tone_dirty <= 1'b0; fx_dirty <= 1'b0; mode_dirty <= 1'b0;
+            test_dirty <= 1'b0;
         end else begin
             // 变更检测（与已锁存值比较；选中行镜像演奏侧，UI 不持状态）
             if (st_timbre != r_timbre) tone_dirty <= 1'b1;
@@ -252,6 +259,8 @@ module ui_render #(
             else if (fx_dirty_clr)     fx_dirty   <= 1'b0;
             if (st_mode   != r_mode)   mode_dirty <= 1'b1;
             else if (mode_dirty_clr)   mode_dirty <= 1'b0;
+            if (st_test   != r_test)   test_dirty <= 1'b1;
+            else if (test_dirty_clr)   test_dirty <= 1'b0;
             // 每次区域开始都锁存一次完整状态（区域内部像素用同一份）
             if (win_start) begin
                 r_timbre <= st_timbre;
@@ -259,6 +268,7 @@ module ui_render #(
                 r_mode   <= st_mode;
                 r_note   <= st_note;
                 r_voices <= st_voices;
+                r_test   <= st_test;
                 r_bank   <= live_bank;
                 r_live   <= live_valid;
             end
@@ -365,7 +375,8 @@ module ui_render #(
                      RG_WAVE = 3'd1,
                      RG_TONE = 3'd2,
                      RG_FX   = 3'd3,
-                     RG_MODE = 3'd4;
+                     RG_MODE = 3'd4,
+                     RG_SCALE = 3'd5;
 
     reg [2:0]  region;
     reg [1:0]  sched;              // 0=选区域 1=发窗口 2=等 busy 3=等 done
@@ -384,12 +395,14 @@ module ui_render #(
             full_pending <= 1'b1;
             cap_trig <= 1'b0;
             frame_wave_done <= 1'b0;
-            tone_dirty_clr <= 1'b0; fx_dirty_clr <= 1'b0; mode_dirty_clr <= 1'b0;
+            tone_dirty_clr <= 1'b0; fx_dirty_clr <= 1'b0;
+            mode_dirty_clr <= 1'b0; test_dirty_clr <= 1'b0;
         end else begin
             win_start <= 1'b0;
             frame_wave_done <= 1'b0;
             cap_trig <= 1'b0;
-            tone_dirty_clr <= 1'b0; fx_dirty_clr <= 1'b0; mode_dirty_clr <= 1'b0;
+            tone_dirty_clr <= 1'b0; fx_dirty_clr <= 1'b0;
+            mode_dirty_clr <= 1'b0; test_dirty_clr <= 1'b0;
 
             case (sched)
                 2'd0: if (!busy) begin
@@ -398,6 +411,7 @@ module ui_render #(
                     else if (tone_dirty)   region <= RG_TONE;
                     else if (fx_dirty)     region <= RG_FX;
                     else if (mode_dirty)   region <= RG_MODE;
+                    else if (test_dirty)   region <= RG_SCALE;
                     else                   region <= RG_WAVE;
                     sched <= 2'd1;
                 end
@@ -420,9 +434,13 @@ module ui_render #(
                             win_x0 <= COL1_X0; win_x1 <= COL1_X1;
                             win_y0 <= {2'b0, OPT_Y0}; win_y1 <= {2'b0, OPT_Y1};
                         end
-                        default: begin
+                        RG_MODE: begin
                             win_x0 <= COL2_X0; win_x1 <= COL2_X1;
                             win_y0 <= {2'b0, OPT_Y0}; win_y1 <= {2'b0, OPT_Y1};
+                        end
+                        default: begin
+                            win_x0 <= SCALE_BOX_X0; win_x1 <= 10'd319;
+                            win_y0 <= {2'b0, SCALE_Y0}; win_y1 <= {2'b0, SCALE_Y1};
                         end
                     endcase
                     win_start <= 1'b1;
@@ -436,6 +454,7 @@ module ui_render #(
                         RG_TONE: tone_dirty_clr  <= 1'b1;
                         RG_FX:   fx_dirty_clr    <= 1'b1;
                         RG_MODE: mode_dirty_clr  <= 1'b1;
+                        RG_SCALE: test_dirty_clr <= 1'b1;
                         default: ;
                     endcase
                     sched <= 2'd0;
@@ -522,8 +541,8 @@ module ui_render #(
     // ------------------------------------------------------------
     // 字库地址（同步读 1 拍；调式框与文本行互斥，共用这一个读口）
     // ------------------------------------------------------------
-    wire [7:0] ch_code_raw = in_scale_txt ? ui_char(2'd3, 3'd0, s_idx)
-                                           : (in_text_row && cx_ok ? ui_char(cur_col, cur_line, ch_idx)
+    wire [7:0] ch_code_raw = in_scale_txt ? ui_char(2'd3, 3'd0, s_idx, r_test)
+                                           : (in_text_row && cx_ok ? ui_char(cur_col, cur_line, ch_idx, r_test)
                                                                    : 8'h20);
     wire [3:0] ch_row_raw  = in_scale_txt ? scl_row_in[3:0] : cur_row_in;
     wire [7:0] ch_code = ch_code_raw;
@@ -543,7 +562,8 @@ module ui_render #(
     wire       gbit     = in_scale_txt ? gbit_scl : gbit_txt;
 
     // ------------------------------------------------------------
-    // 像素纯函数（组合；第 n+2 拍稳定）
+    // 像素纯函数输出。tft_st7789 在 pix_we 后第 2 拍采样；
+    // 字库同步读需要恰好这一拍，不能再额外寄存 px_data，否则文字会错一行/列。
     // ------------------------------------------------------------
     always @(*) begin
         px_data = C_BG;
@@ -571,14 +591,10 @@ module ui_render #(
                 end else begin
                     px_data = C_BG;
                 end
-            end else if (r_live) begin
-                // 真实采样：示波器式折线
-                if (live_hit)             px_data = C_WAVE;
-                else if (px_y == MID_Y)   px_data = C_MID;
-                else                      px_data = C_BG;
             end else begin
-                // 还没有采到窗口（上电最初几帧 / 仿真）：合成波形兜底
-                if (wave_hit || vert_hit) px_data = C_WAVE;
+                // 正式界面只显示真实 I2S 采样；尚未采到窗口时显示静音中线。
+                // 不再使用合成波形占位，避免正弦乘法进入像素组合路径。
+                if (live_hit)             px_data = C_WAVE;
                 else if (px_y == MID_Y)   px_data = C_MID;
                 else                      px_data = C_BG;
             end

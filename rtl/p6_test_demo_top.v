@@ -3,10 +3,10 @@
 //   （独奏/和弦模式 + 音色 + 合唱 + 电平对比开关 + OLED + LED）
 //
 //   PIN28/29/30/31 + PIN77/85/86 : 外接七键 C4/D4/E4/F4/G4/A4/B4
-//   PIN88 (S1)  : 切换音色 SINE / SQUARE
-//   PIN87 (S2)  : 切换效果器 DRY / CHORUS
-//   PIN27       : 模式开关：低 = 独奏 MONO（单音），高 = 和弦 CHORD（大三和弦）
-//   PIN25       : 电平开关：低 = LO（约 −6dB），高 = HI（调试破音用）
+//   PIN88 (S1)  : 循环切换 4 种音色
+//   PIN87 (S2)  : 循环切换 4 种效果
+//   PIN27       : 模式开关：ONE / TRI / PLUCK ONE / PLUCK TRI 循环
+//   PIN25       : R3 测试模式开关：切换前等待正式声部空闲
 //   PIN71-76    : 2.4 寸 ST7789 TFT（SCLK/MOSI/CS/DC/RES/BLK），横屏 UI
 //   PIN51/54/55/56 : 功放使能与 I2S
 //   PIN15-PIN20 : 板载 LED，低电平点亮
@@ -26,8 +26,8 @@ module p6_test_demo_top (
     input  wire [6:0] key_n,            // 七个演奏键，低有效
     input  wire       key_timbre_n,     // 板载 S1，低有效
     input  wire       key_fx_n,         // 板载 S2，低有效
-    input  wire       key_mode_n,       // PIN27：低 = 独奏，高 = 和弦
-    input  wire       key_level_n,      // PIN25：低 = LO，高 = HI
+    input  wire       key_mode_n,       // PIN27：MODE 四档循环
+    input  wire       key_level_n,      // PIN25：R3 测试模式切换
 
     // 摇杆（HW-504）：RC 测时，不用 ADC 芯片
     inout  wire       joy_x,            // PIN48
@@ -61,7 +61,9 @@ module p6_test_demo_top (
     wire [15:0] joyx_code, joyy_code;
     wire        joyx_valid, joyy_valid, joyx_fault, joyy_fault;
     wire [15:0] bend_q15;
-    reg  signed [16:0] joyx_filt, joyy_filt;   // 一阶低通后的平滑值
+    wire signed [16:0] joyx_filt, joyy_filt;   // 去尖峰 + 一阶低通后的值
+    wire [7:0] y_velocity;
+    wire [7:0] y_expression;
 
     // 开机自动对中：上电后采 64 次 X 轴取平均当零点（此时摇杆应回中）
     reg [21:0] cal_sum;
@@ -162,8 +164,20 @@ module p6_test_demo_top (
     wire signed [15:0] mix_sample;
     wire signed [15:0] fx_sample;
     wire               scan_done;
-    wire [3:0]         voice_active;
-    wire [3:0]         voice_busy;
+    wire [31:0]        voice_active;
+    wire [31:0]        voice_busy;
+
+    // R3 测试模式：固定频率音符仍由同一个 synth_engine 生成
+    wire               test_note_on;
+    wire               test_note_off;
+    wire [6:0]         test_note_id;
+    wire [31:0]        test_note_inc;
+    wire               test_busy;
+    wire [5:0]         test_active_cnt;
+    wire               test_enable;
+    wire               test_route;
+    wire               test_wait_quiet;
+    wire               test_state_active;
 
     reg [1:0] timbre_sel;   // 0=SINE 1=SQUARE 2=SAW 3=TRIANGLE
     reg [1:0] timbre_req;
@@ -174,10 +188,8 @@ module p6_test_demo_top (
     wire chord_en  = (mode_sel == 2'd1) || (mode_sel == 2'd3);
     wire pluck_mode = mode_sel[1];
 
-    wire level_lo = ~lvl_pressed[0];   // 低电平 = LO（−6dB），立即生效便于对比
-
-    wire [3:0] sounding = voice_active | voice_busy;
-    reg  [2:0] voice_cnt;
+    wire [31:0] sounding = voice_active | voice_busy;
+    reg  [5:0]  voice_cnt;
     integer i;
 
     wire [1:0] ctrl_key_n = {key_fx_n, key_timbre_n};
@@ -252,6 +264,35 @@ module p6_test_demo_top (
         .release_pulse (lvl_release_pulse)
     );
 
+    // R3 测试模式：PIN25 切换；进入前等待正式演奏声部全部空闲。
+    test_mode_router u_test_router (
+        .clk              (clk_sys),
+        .rst_n            (rst_n),
+        .toggle_req       (lvl_press_pulse[0]),
+        .voice_busy       (|voice_busy),
+        .test_busy        (test_busy),
+        .test_enable      (test_enable),
+        .test_route       (test_route),
+        .state_wait_quiet (test_wait_quiet),
+        .state_test       (test_state_active)
+    );
+
+    test_mode #(
+        .CLK_MHZ (72),
+        .N_TONES (32),
+        .HOLD_US (500)
+    ) u_test_mode (
+        .clk        (clk_sys),
+        .rst_n      (rst_n),
+        .enable     (test_enable),
+        .note_on    (test_note_on),
+        .note_off   (test_note_off),
+        .note_id    (test_note_id),
+        .note_inc   (test_note_inc),
+        .busy       (test_busy),
+        .active_cnt (test_active_cnt)
+    );
+
     // 摇杆两轴：引脚推低放电 → 释放 → 数到输入变高
     rc_adc u_joy_x (
         .clk   (clk_sys),
@@ -271,37 +312,44 @@ module p6_test_demo_top (
         .fault (joyy_fault)
     );
 
-    // 一阶低通：y += (x - y)/8（约 8ms 时间常数，弯音仍然跟手）
-    always @(posedge clk_sys or negedge rst_n) begin
-        if (!rst_n) begin
-            joyx_filt <= 17'sd0;
-            joyy_filt <= 17'sd0;
-        end else begin
-            if (joyx_valid && !joyx_fault)
-                joyx_filt <= joyx_filt +
-                             (($signed({1'b0, joyx_code}) - joyx_filt) >>> 3);
-            if (joyy_valid && !joyy_fault)
-                joyy_filt <= joyy_filt +
-                             (($signed({1'b0, joyy_code}) - joyy_filt) >>> 3);
-        end
-    end
+    // 两轴都先做 3 点中值去尖峰，再做 1/8 一阶低通。
+    joy_filter #(
+        .WIDTH (16),
+        .SHIFT (3)
+    ) u_joy_x_filter (
+        .clk          (clk_sys),
+        .rst_n        (rst_n),
+        .sample_valid (joyx_valid),
+        .sample_fault (joyx_fault),
+        .sample_in    (joyx_code),
+        .filtered_out (joyx_filt)
+    );
 
-    // Y 轴 → 力度 0..255（中位 128，推到两端接近 0/255）
-    // dy > 0：电压更高（code 更小）方向
-    wire signed [17:0] dy      = $signed({2'b00, center_y}) - $signed({2'b00, joyy_filt[15:0]});
-    wire        [17:0] dy_mag  = dy[17] ? (~dy + 18'd1) : dy;
-    wire        [17:0] dy_eff  = (dy_mag > 18'd150) ? (dy_mag - 18'd150) : 18'd0;
-    // 减小方向保持 41；增大方向放大到 70（原来 27 太小，听不出"变响"）
-    wire        [17:0] vel_off = dy[17] ? ((dy_eff * 18'd41) >> 8)
-                                        : ((dy_eff * 18'd70) >> 8);
-    // 一个方向加、另一个方向减（原来两边都在加，所以听不出力度差）
-    wire signed [9:0]  vel_tmp = dy[17]
-                                 ? (10'sd128 - $signed({2'b0, vel_off[7:0]}))
-                                 : (10'sd128 + $signed({2'b0, vel_off[7:0]}));
-    wire        [7:0]  vel_calc = (vel_tmp < 0)   ? 8'd0 :
-                                  (vel_tmp > 255) ? 8'd255 : vel_tmp[7:0];
+    joy_filter #(
+        .WIDTH (16),
+        .SHIFT (3)
+    ) u_joy_y_filter (
+        .clk          (clk_sys),
+        .rst_n        (rst_n),
+        .sample_valid (joyy_valid),
+        .sample_fault (joyy_fault),
+        .sample_in    (joyy_code),
+        .filtered_out (joyy_filt)
+    );
 
-    // X 轴 → 音高弯音（±2 半音）
+    // Y 轴同时提供 note-on 力度与持续 expression 两条语义。
+    // synth_engine 只在 note_on 当拍使用 velocity；expression 在混音后持续生效。
+    expression_map u_expression (
+        .clk        (clk_sys),
+        .rst_n      (rst_n),
+        .sample_valid (joyy_valid && !joyy_fault),
+        .filtered_y (joyy_filt),
+        .center_y   (center_y),
+        .velocity   (y_velocity),
+        .expression (y_expression)
+    );
+
+    // X 轴 → 音高弯音（约 ±1 半音）
     pitch_bend_map u_bend (
         .clk      (clk_sys),
         .rst_n    (rst_n),
@@ -333,7 +381,7 @@ module p6_test_demo_top (
             if (mode_press_pulse[0])
                 mode_req <= mode_req + 2'd1;   // ONE→TRI→PLUCK ONE→PLUCK TRI
 
-            if (voice_busy == 4'b0000) begin
+            if (voice_busy == 32'd0) begin
                 if (timbre_sel != timbre_req)
                     timbre_sel <= timbre_req;
                 if (mode_sel != mode_req)
@@ -356,7 +404,8 @@ module p6_test_demo_top (
     );
 
     chord_map #(
-        .KEYS (7)
+        .KEYS    (7),
+        .BUSY_W  (32)
     ) u_chord (
         .clk         (clk_sys),
         .rst_n       (rst_n),
@@ -376,8 +425,38 @@ module p6_test_demo_top (
     assign note_id  = chord_en ? ch_note_id  : mono_note_id;
     assign note_inc = chord_en ? ch_note_inc : mono_note_inc;
 
+    // 演奏事件先寄存一拍，打断按键选择/频率表 → 声部分配的长组合路径。
+    // key_scan 和 chord_map 输出的 note_on/off 都是单周期，寄存不会丢事件。
+    reg        perf_note_on_q;
+    reg        perf_note_off_q;
+    reg [6:0]  perf_note_id_q;
+    reg [31:0] perf_note_inc_q;
+
+    always @(posedge clk_sys or negedge rst_n) begin
+        if (!rst_n) begin
+            perf_note_on_q  <= 1'b0;
+            perf_note_off_q <= 1'b0;
+            perf_note_id_q  <= 7'd0;
+            perf_note_inc_q <= 32'd0;
+        end else begin
+            perf_note_on_q  <= note_on;
+            perf_note_off_q <= note_off;
+            perf_note_id_q  <= note_id;
+            perf_note_inc_q <= note_inc;
+        end
+    end
+
+    // 测试模式独占合成引擎的事件入口；完全绕过演奏按键与和弦逻辑。
+    wire        engine_note_on  = test_route ? test_note_on  : perf_note_on_q;
+    wire        engine_note_off = test_route ? test_note_off : perf_note_off_q;
+    wire [6:0]  engine_note_id  = test_route ? test_note_id  : perf_note_id_q;
+    wire [31:0] engine_note_inc = test_route ? test_note_inc : perf_note_inc_q;
+    wire [1:0]  engine_table_sel = test_route ? 2'd0 : timbre_sel;
+    wire [15:0] engine_bend_q15 = test_route ? 16'd32768 : bend_q15;
+    wire [7:0]  engine_velocity = test_route ? 8'd255 : y_velocity;
+
     synth_engine #(
-        .VOICES        (4),
+        .VOICES        (32),
         .PHASE_BITS    (32),
         .ADDR_BITS     (12),
         .SAMPLE_W      (16),
@@ -394,15 +473,14 @@ module p6_test_demo_top (
         .clk          (clk_sys),
         .rst_n        (rst_n),
         .sample_en    (sample_en),
-        .table_sel    (timbre_sel),
-        .bend_q15     (bend_q15),
-        // 力度改为"持续表情"（混音后增益），单声部锁存力度固定为满
-        .velocity     (8'd255),
-        .pluck        (pluck_mode),
-        .note_on      (note_on),
-        .note_off     (note_off),
-        .note_id      (note_id),
-        .note_inc     (note_inc),
+        .table_sel    (engine_table_sel),
+        .bend_q15     (engine_bend_q15),
+        .velocity     (engine_velocity),
+        .pluck        (test_route ? 1'b0 : pluck_mode),
+        .note_on      (engine_note_on),
+        .note_off     (engine_note_off),
+        .note_id      (engine_note_id),
+        .note_inc     (engine_note_inc),
         .mix_sample   (mix_raw),
         .scan_done    (scan_done),
         .voice_active (voice_active),
@@ -416,21 +494,27 @@ module p6_test_demo_top (
         (timbre_sel == 2'd2) ? (mix_raw - (mix_raw >>> 2)) :
         mix_raw;
 
-    // 持续表情：Y 轴实时控制整体音量（0.25 ~ 1.0，约 12dB）
-    // 按住音时推摇杆也能听到变化；按下瞬间的音量也由当时位置决定。
-    // 中心约 0.35，最低约 0.10，最高 1.0：
-    //   下半段 expr = 26 + vel/2（26..90）
-    //   上半段 expr = 90 + 1.3*(vel-128)（90..255）→ 增大方向约 +9dB
-    wire [7:0] up_d      = vel_calc - 8'd128;
-    wire [8:0] expr_down = 9'd26 + {1'b0, vel_calc[7:1]};
-    wire [8:0] expr_up   = 9'd90 + {1'b0, up_d} + {2'b0, up_d[7:2]} + {4'b0, up_d[7:4]};
-    wire [8:0] expr_sum  = (vel_calc <= 8'd128) ? expr_down : expr_up;
-    wire [7:0] expr_gain = (expr_sum > 9'd255) ? 8'd255 : expr_sum[7:0];
-    wire signed [23:0] expr_prod = timbre_trim * $signed({1'b0, expr_gain});
+    // 每个音频样本有约 1500 个时钟，TONE 补偿和 expression 乘法各寄存一级。
+    reg signed [15:0] timbre_trim_q;
+    reg signed [15:0] expr_trim_q;
+
+    // 持续表情：Y 轴实时控制混音后的整体音量。
+    // note-on 力度已经在 synth_engine 内锁存，这里的 expression 只负责后续变化。
+    wire signed [23:0] expr_prod = timbre_trim_q * $signed({1'b0, y_expression});
     wire signed [15:0] expr_trim = expr_prod[23:8];          // >>8
 
-    // 电平开关：HI 原样，LO 右移一位（约 −6dB），用于判断破音是数字端还是模拟端
-    assign mix_sample = level_lo ? (expr_trim >>> 1) : expr_trim;
+    always @(posedge clk_sys or negedge rst_n) begin
+        if (!rst_n) begin
+            timbre_trim_q <= 16'sd0;
+            expr_trim_q   <= 16'sd0;
+        end else begin
+            timbre_trim_q <= timbre_trim;
+            expr_trim_q   <= expr_trim;
+        end
+    end
+
+    // 测试模式绕过音色补偿和持续表情，直接观察合成引擎原始混音。
+    assign mix_sample = test_route ? mix_raw : expr_trim_q;
 
     chorus #(
         .SAMPLE_W  (16),
@@ -441,7 +525,7 @@ module p6_test_demo_top (
         .clk              (clk_sys),
         .rst_n            (rst_n),
         .sample_en        (sample_en),
-        .mode             (fx_mode),
+        .mode             (test_route ? 2'd0 : fx_mode),
         .sample_in        (mix_sample),
         .sample_out       (fx_sample),
         .sample_valid_out ()
@@ -458,10 +542,10 @@ module p6_test_demo_top (
         .sample_req (sample_en)
     );
 
-    // 实时发声数（和弦模式下最多 3）
+    // 当前 32 声部引擎中的实际发声数。
     always @* begin
-        voice_cnt = 3'd0;
-        for (i = 0; i < 4; i = i + 1)
+        voice_cnt = 6'd0;
+        for (i = 0; i < 32; i = i + 1)
             voice_cnt = voice_cnt + sounding[i];
     end
 
@@ -490,15 +574,21 @@ module p6_test_demo_top (
     wire signed [15:0] wave_sample;
     wire [15:0]        wave_peak;
 
-    // DEBUG_JOY=1：波形带临时改成摇杆 X/Y 读数条（标定完改回 0）
-    ui_render #(.DEBUG_JOY(1)) u_ui (
+    // UI 波形幅度仍按 0..4 档显示，避免 32 声部超出 84px 活动带。
+    wire [5:0] ui_voice_count = test_route ? test_active_cnt : voice_cnt;
+    wire [2:0] displayed_voice_cnt =
+        (ui_voice_count > 6'd4) ? 3'd4 : ui_voice_count[2:0];
+
+    // 正式界面：波形带显示 I2S 实际样本；R3 测试时右上角显示 TEST。
+    ui_render #(.DEBUG_JOY(0)) u_ui (
         .clk         (clk_sys),
         .rst_n       (rst_n),
         .st_timbre   (timbre_sel),
         .st_fx       (fx_mode),
         .st_mode     (mode_sel),
         .st_note     (note_id),
-        .st_voices   (voice_cnt),
+        .st_voices   (displayed_voice_cnt),
+        .st_test     (test_route),
         .st_key_root (7'd0),
         .live_valid  (wave_valid),
         .live_bank   (wave_bank),
@@ -506,9 +596,9 @@ module p6_test_demo_top (
         .capture_trig(wave_trig),
         .rd_bank_sel (wave_rd_bank),
         .rd_addr     (wave_rd_addr),
-        // X 显示原始计数（屏蔽低 4 位）；Y 显示力度值 vel_calc
+        // 调试输入保留接线；DEBUG_JOY=0 时这些字段不参与正式波形显示。
         .dbg_x_code  (joyx_filt[15:0] & 16'hFFF0),
-        .dbg_y_code  ({8'b0, vel_calc}),
+        .dbg_y_code  ({8'b0, y_velocity}),
         .dbg_x_fault (joyx_fault),
         .dbg_y_fault (joyy_fault),
         .dbg_bend    (bend_q15),
@@ -570,7 +660,12 @@ module p6_test_demo_top (
 
     assign pa_en      = pll_lock;
 
-    // 七键调试：LED0-4 = K1-K5；LED5 = K6 或 K7（板载只有 6 颗灯）
-    assign led_n[4:0] = ~pressed[4:0];
-    assign led_n[5]   = ~(pressed[5] | pressed[6]);
+    // 正式演奏：LED0-4 = K1-K5；LED5 = K6 或 K7。
+    // R3 测试：1..5 个音按数量点亮，6..32 个音全部点亮。
+    wire [5:0] test_led_mask =
+        (test_active_cnt == 6'd0) ? 6'h00 :
+        (test_active_cnt >= 6'd6) ? 6'h3f :
+        (6'h01 << test_active_cnt) - 1'b1;
+    assign led_n = test_route ? ~test_led_mask :
+                                ~{pressed[6] | pressed[5], pressed[4:0]};
 endmodule
