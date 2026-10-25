@@ -32,6 +32,9 @@
         <File path="../../rtl/synth/bend_scan.v" type="file.verilog" enable="1"/>
         <File path="../../rtl/synth/synth_engine.v" type="file.verilog" enable="1"/>
         <File path="../../rtl/synth/chorus.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/synth/delay_effect.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/synth/reverb_effect.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/synth/fx_engine.v" type="file.verilog" enable="1"/>
         <File path="../../rtl/io/i2s_tx.v" type="file.verilog" enable="1"/>
         <File path="../../rtl/io/i2c_master.v" type="file.verilog" enable="1"/>
         <File path="../../rtl/display/tft_st7789.v" type="file.verilog" enable="1"/>

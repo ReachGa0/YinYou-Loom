@@ -31,6 +31,7 @@ module voice_alloc #(
     reg [NOTE_ID_W-1:0] note_id_reg [0:VOICES-1];
     reg [IDX_W-1:0]     steal_ptr;
     reg [VOICES-1:0]    free_mask;
+    reg [VOICES-1:0]    free_mask_q;
     reg [IDX_W-1:0]     alloc_idx;
     reg                 alloc_found;
 
@@ -38,15 +39,17 @@ module voice_alloc #(
 
     always @* begin
         free_mask  = {VOICES{1'b0}};
-        alloc_idx  = {IDX_W{1'b0}};
-        alloc_found = 1'b0;
 
         for (i = 0; i < VOICES; i = i + 1)
             if (!voice_active[i] && !voice_busy[i])
                 free_mask[i] = 1'b1;
+    end
 
+    always @* begin
+        alloc_idx   = {IDX_W{1'b0}};
+        alloc_found = 1'b0;
         for (i = 0; i < VOICES; i = i + 1)
-            if (free_mask[i] && !alloc_found) begin
+            if (free_mask_q[i] && !alloc_found) begin
                 alloc_found = 1'b1;
                 alloc_idx   = i;
             end
@@ -58,30 +61,35 @@ module voice_alloc #(
             voice_gain_flat <= {VOICES*GAIN_W{1'b0}};
             voice_gate_flat <= {VOICES{1'b0}};
             voice_active    <= {VOICES{1'b0}};
+            free_mask_q     <= {VOICES{1'b1}};
             steal_ptr       <= {IDX_W{1'b0}};
             for (i = 0; i < VOICES; i = i + 1)
                 note_id_reg[i] <= {NOTE_ID_W{1'b0}};
-        end else if (note_off) begin
-            for (i = 0; i < VOICES; i = i + 1)
-                if (voice_active[i] && note_id_reg[i] == note_id) begin
-                    voice_gate_flat[i] <= 1'b0;
-                    voice_active[i]    <= 1'b0;
+        end else begin
+            free_mask_q <= free_mask;
+
+            if (note_off) begin
+                for (i = 0; i < VOICES; i = i + 1)
+                    if (voice_active[i] && note_id_reg[i] == note_id) begin
+                        voice_gate_flat[i] <= 1'b0;
+                        voice_active[i]    <= 1'b0;
+                    end
+            end else if (note_on) begin
+                if (alloc_found) begin
+                    voice_gate_flat[alloc_idx] <= 1'b1;
+                    voice_active[alloc_idx]    <= 1'b1;
+                    voice_inc_flat[alloc_idx*PHASE_BITS +: PHASE_BITS] <= note_inc;
+                    voice_gain_flat[alloc_idx*GAIN_W +: GAIN_W] <= note_gain;
+                    note_id_reg[alloc_idx]     <= note_id;
+                    steal_ptr <= alloc_idx + 1'b1;
+                end else begin
+                    voice_gate_flat[steal_ptr] <= 1'b1;
+                    voice_active[steal_ptr]    <= 1'b1;
+                    voice_inc_flat[steal_ptr*PHASE_BITS +: PHASE_BITS] <= note_inc;
+                    voice_gain_flat[steal_ptr*GAIN_W +: GAIN_W] <= note_gain;
+                    note_id_reg[steal_ptr]     <= note_id;
+                    steal_ptr <= steal_ptr + 1'b1;
                 end
-        end else if (note_on) begin
-            if (alloc_found) begin
-                voice_gate_flat[alloc_idx] <= 1'b1;
-                voice_active[alloc_idx]    <= 1'b1;
-                voice_inc_flat[alloc_idx*PHASE_BITS +: PHASE_BITS] <= note_inc;
-                voice_gain_flat[alloc_idx*GAIN_W +: GAIN_W] <= note_gain;
-                note_id_reg[alloc_idx]     <= note_id;
-                steal_ptr <= alloc_idx + 1'b1;
-            end else begin
-                voice_gate_flat[steal_ptr] <= 1'b1;
-                voice_active[steal_ptr]    <= 1'b1;
-                voice_inc_flat[steal_ptr*PHASE_BITS +: PHASE_BITS] <= note_inc;
-                voice_gain_flat[steal_ptr*GAIN_W +: GAIN_W] <= note_gain;
-                note_id_reg[steal_ptr]     <= note_id;
-                steal_ptr <= steal_ptr + 1'b1;
             end
         end
     end

@@ -42,7 +42,7 @@ module ui_render #(
 
     // ---- 状态总线（只读；由演奏逻辑提供）----
     input  wire [1:0]  st_timbre,      // 0=SINE 1=SQUARE
-    input  wire [1:0]  st_fx,          // 0=DRY  1=CHORUS
+    input  wire [1:0]  st_fx,          // 0=DRY 1=CHORUS 2=DELAY 3=REVERB
     input  wire [1:0]  st_mode,        // 0=ONE  1=TRI
     input  wire [6:0]  st_note,        // 当前发声音符 → 波长
     input  wire [2:0]  st_voices,      // 同时发声数 0..4 → 幅度
@@ -122,8 +122,8 @@ module ui_render #(
     localparam [95:0] S_OPT03 = "TRIANGLE    ";
     localparam [95:0] S_OPT10 = "DRY         ";
     localparam [95:0] S_OPT11 = "CHORUS      ";
-    localparam [95:0] S_OPT12 = "VIBRATO     ";
-    localparam [95:0] S_OPT13 = "TREMOLO     ";
+    localparam [95:0] S_OPT12 = "DELAY       ";
+    localparam [95:0] S_OPT13 = "REVERB      ";
     localparam [95:0] S_OPT20 = "ONE         ";
     localparam [95:0] S_OPT21 = "TRI         ";
     localparam [95:0] S_OPT22 = "PLUCK ONE   ";
@@ -513,7 +513,21 @@ module ui_render #(
     wire [1:0]  cur_col = in_col0 ? 2'd0 : (in_col1 ? 2'd1 : 2'd2);
     wire [9:0]  cur_col_x0 = in_col0 ? COL0_X0 : (in_col1 ? COL1_X0 : COL2_X0);
 
-    wire [9:0]  cx10    = {1'b0, px_x} - cur_col_x0 - TXT_PAD;
+    // 字库地址组合逻辑较长，在坐标变化后先寄存列选择，再由下一拍取字模。
+    // TFT 驱动器相应多等一拍，坐标在该窗口内保持不变。
+    reg [1:0] cur_col_q;
+    reg [9:0] cur_col_x0_q;
+    always @(posedge clk) begin
+        if (!rst_n) begin
+            cur_col_q    <= 2'd0;
+            cur_col_x0_q <= 10'd0;
+        end else begin
+            cur_col_q    <= cur_col;
+            cur_col_x0_q <= cur_col_x0;
+        end
+    end
+
+    wire [9:0]  cx10    = {1'b0, px_x} - cur_col_x0_q - TXT_PAD;
     wire        cx_ok   = (cx10 < 10'd96);                 // 最多 12 字符
     wire [3:0]  ch_idx  = cx10[6:3];
     wire [2:0]  ch_bit  = cx10[2:0];
@@ -535,14 +549,14 @@ module ui_render #(
     wire [3:0]  cur_row_in  = in_hdr_row  ? hdr_row_in[3:0] :
                               in_opt_row  ? opt_y[3:0]      :
                                             hint_row_in[3:0];
-    wire [1:0]  cur_sel    = (cur_col == 2'd0) ? sel0 :
-                             (cur_col == 2'd1) ? sel1 : sel2;
+    wire [1:0]  cur_sel    = (cur_col_q == 2'd0) ? sel0 :
+                             (cur_col_q == 2'd1) ? sel1 : sel2;
 
     // ------------------------------------------------------------
     // 字库地址（同步读 1 拍；调式框与文本行互斥，共用这一个读口）
     // ------------------------------------------------------------
     wire [7:0] ch_code_raw = in_scale_txt ? ui_char(2'd3, 3'd0, s_idx, r_test)
-                                           : (in_text_row && cx_ok ? ui_char(cur_col, cur_line, ch_idx, r_test)
+                                           : (in_text_row && cx_ok ? ui_char(cur_col_q, cur_line, ch_idx, r_test)
                                                                    : 8'h20);
     wire [3:0] ch_row_raw  = in_scale_txt ? scl_row_in[3:0] : cur_row_in;
     wire [7:0] ch_code = ch_code_raw;

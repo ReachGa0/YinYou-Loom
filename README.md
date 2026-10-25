@@ -208,18 +208,18 @@ Y 轴同时提供 note-on 力度和持续 expression。超声波与 ADS1115 已�
 | 项目 | 状态 |
 |---|---|
 | 当前阶段 | **P6 测试模式与验证 / E1 冲刺**：32 声部已实现并综合通过；等待当前位流实机确认 |
-| 已完成 | P0–P4、基础 4 声部与 E1 32 声部合成、I2S 出声、8 键 PCB、MODE 四档、TONE/FX 各 4 档、TFT、拨弦、合唱 |
+| 已完成 | P0–P4、基础 4 声部与 E1 32 声部合成、I2S 出声、8 键 PCB、MODE 四档、TONE 四档、FX 四档 `DRY/CHORUS/DELAY/REVERB`、TFT、拨弦 |
 | 已完成 | 摇杆 X/Y RC 链路；新增 3 点中值去尖峰 + 一阶低通；Y 轴拆分为 note-on `velocity` 和持续 `expression` |
 | 已完成 | P5D 输入语义闭环；正式波形 UI 已恢复，`DEBUG_JOY=0` |
 | 已完成 | R3 测试模式通过 PIN25 切换；当前测试模式扩展到 32 个质数相干频率，仿真可识别 32 个峰 |
-| 下一步 | **当前 32 声部位流实机确认**；随后按总路线进入 E2 第三维/效果器；延迟和精确硬件谱峰计数继续暂缓 |
-| 验证 | 全量仿真 **41/41 PASS**，新增 32 声部分配、混音、弯音扫描、合成和频谱分析 |
-| 综合 | `p6_test_demo`：Logic **10938/20736**、Register **6665/15750**、BSRAM **20/46**、DSP **22/24**；setup/hold **0/0 违例**，最差 setup slack `+0.391 ns` |
-| 位流 | `fpga/p6_test_demo/impl/pnr/p6_test_demo.fs`；SHA256 `B64F9A3B922A0747875CF923DD6BB06C88E1AEAE6B428C2AD1949F0FB889DB44`；**已烧录 SRAM**，User Code `0x000073C0` |
-| 硬件状态 | 当前 32 声部位流已实机确认：普通演奏、TFT 文字、摇杆与 R3 均正常 |
+| 下一步 | 按 22–26 批次继续：优先 E2 第三维表情，其次滑音/扫弦和低成本视觉 |
+| 验证 | 全量仿真 **44/44 PASS**，新增 DELAY、四路 REVERB、FX 模式切换和更新后的字模检查 |
+| 综合 | `p6_test_demo`：Logic **11666/20736**、Register **6881/15750**、BSRAM **43/46**、DSP **21.5/24**；setup/hold **0/0 违例**，最差 setup slack `+0.044 ns` |
+| 位流 | `fpga/p6_test_demo/impl/pnr/p6_test_demo.fs`；SHA256 `10A79E8819F5276E40D64226DA26DCCDABEFCAF660DF2F3CEB870D7C5EB477A3`；**已烧录 SRAM**，User Code `0x000098F5` |
+| 硬件状态 | 32 声部和 `DRY/CHORUS/DELAY/REVERB` 已通过实机验收 |
 | 载板状态 | 摆件和内层铺铜已有记录，但旧器件表仍含超声波/四键；**接口整改前禁止按旧计划走线**（详见 `docs/23` §8） |
-| 进阶缺口 | E2 第 3 维及延迟/混响 ❌；E3 ≤5ms、确定性抖动和完整视觉 ❌；E4 ❌ |
-| 已确认决策 | E1 32 复音；8 键输入；MODE 四档；TONE/FX 各 4 档；X=Pitch Bend、Y=力度/expression；取消超声波和 ADS1115；PIN25=R3；自研触摸延后 |
+| 进阶缺口 | E2 第 3 维、滑音/扫弦 ❌；E3 ≤5ms、确定性抖动和完整视觉 ❌；E4 ❌ |
+| 已确认决策 | E1 32 复音；8 键输入；MODE 四档；TONE 四档；FX=`DRY/CHORUS/DELAY/REVERB`；X=Pitch Bend、Y=力度/expression；取消超声波和 ADS1115；PIN25=R3 |
 | 截止时间 | **2026-11-04 18:00** |
 
 ---

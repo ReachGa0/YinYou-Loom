@@ -187,7 +187,8 @@ SPI 字节数固定：`时间 = 字节数 × 8 / SCLK`。12 MHz 下：
 2. `p6_test_demo` 中 `DEBUG_JOY` 已恢复为 0，调试读数页不再接管波形带；
 3. R3 测试模式时右上角显示 `TEST`，波形继续来自实际测试音输出；
 4. `tb_ui_render` 已更新 `st_test` 端口，随全量回归通过；
-5. Gowin 综合后 Logic 10938、BSRAM 20、DSP 22，setup/hold 均为 0。
+5. 加入新 FX 后 Gowin 综合为 Logic 11666、BSRAM 43、DSP 21.5，
+   setup/hold 均为 0。
 
 > ⚠️ 字库 ROM 是同步读。`ui_render` 的 `px_data` 不能在同一拍再寄存，
 > 否则会拿到上一拍字模，实机会出现缺笔或错位。`tb_ui_render` 现已逐字符

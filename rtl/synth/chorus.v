@@ -1,13 +1,11 @@
 // ============================================================
-// chorus.v —— 单抽头调制延迟效果器（4 档）
+// chorus.v —— 单抽头调制延迟合唱
 //
 //   mode = 0 DRY      ：直通（保留同样的三级流水延迟）
 //   mode = 1 CHORUS   ：延迟 10.7~16.0 ms，50% dry + 50% wet
-//   mode = 2 VIBRATO  ：延迟 21.3~32.0 ms，100% wet（音高抖动）
-//   mode = 3 TREMOLO  ：不做延迟，按 LFO 做 0.5~1.0 的幅度调制
 //
-// 后三档共用同一条延迟线与 LFO，只是抽头位置和混音比例不同；
-// 旁路/切换时保留与效果路径一致的三级流水延迟，方便顶层无毛刺切换。
+// 旁路/合唱共用同一条延迟线与 LFO；
+// 旁路/切换时保留与效果路径一致的三级流水延迟。
 //
 // 分数延迟 + 线性插值（2026-09-23 修正）：
 //   早期版本按"整数样本"步进读延迟线，每 256 个样本延迟量突然跳 1 个样本
@@ -52,23 +50,15 @@ module chorus #(
     wire [7:0] lfo_int  = lfo_phase[23] ? ~lfo_phase[22:15] : lfo_phase[22:15];
     wire [7:0] lfo_frac = lfo_phase[23] ? ~lfo_phase[14:7]  : lfo_phase[14:7];
 
-    // 合唱：基准 512；颤音：基准 1024、深度加倍（0..510）
+    // 合唱：基准 MIN_DELAY，深度 0..255 个样本
     wire [ADDR_W-1:0] base_chorus = MIN_DELAY;
-    wire [ADDR_W-1:0] base_vib    = MIN_DELAY << 1;      // 参数化：2× 基准
-    wire [ADDR_W-1:0] base_sel    = (mode == 2'd2) ? base_vib : base_chorus;
-    wire [ADDR_W-1:0] depth_sel   = (mode == 2'd2) ? {lfo_int, 1'b0} : lfo_int;
-    wire [ADDR_W-1:0] addr_a    = write_ptr - base_sel - depth_sel;
+    wire [ADDR_W-1:0] addr_a    = write_ptr - base_chorus - lfo_int;
     wire [ADDR_W-1:0] addr_b    = addr_a - 1'b1;
 
     // 线性插值：a 是较近的抽头，b 是再早一个样本
     wire signed [SAMPLE_W:0]   diff  = b_q - a_q;
     wire signed [SAMPLE_W+8:0] prod  = diff * $signed({1'b0, frac_hold});
     wire signed [SAMPLE_W-1:0] wet_q = a_q + (prod >>> 8);
-
-    // 颤音（tremolo）增益：0.5 ~ 1.0（Q15）
-    wire [15:0]                  trem_gain = 16'd16384 + {2'b0, lfo_int, 6'b0};
-    wire signed [31:0]           trem_prod = dry_hold * $signed({1'b0, trem_gain});
-    wire signed [SAMPLE_W-1:0]   trem_q    = trem_prod[30:15];
 
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
@@ -106,8 +96,6 @@ module chorus #(
             end else if (read_pending == 2'd3) begin
                 case (mode_hold)
                     2'd0: sample_out <= dry_hold;                 // DRY
-                    2'd2: sample_out <= wet_q;                    // VIBRATO（100% wet）
-                    2'd3: sample_out <= trem_q;                   // TREMOLO
                     default:
                     // 50% dry + 50% wet（wet 为分数延迟线性插值结果）
                     sample_out <= (dry_hold + wet_q) >>> 1;

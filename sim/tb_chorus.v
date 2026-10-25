@@ -4,7 +4,7 @@ module tb_chorus;
     reg clk = 1'b0;
     reg rst_n = 1'b0;
     reg sample_en = 1'b0;
-    reg [1:0] mode = 2'd0;          // 0=DRY 1=CHORUS 2=VIBRATO 3=TREMOLO
+    reg [1:0] mode = 2'd0;          // 0=DRY 1=CHORUS
     reg signed [15:0] sample_in = 16'sd0;
 
     wire signed [15:0] sample_out;

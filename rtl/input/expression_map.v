@@ -30,9 +30,8 @@ module expression_map (
     wire [17:0] eff_next =
         (mag_q > 18'd150) ? (mag_q - 18'd150) : 18'd0;
 
-    // 减小方向较缓，增大方向较陡；150 计数死区覆盖中位噪声。
-    wire [17:0] off_next = sign_q2 ? ((eff_q * 18'd41) >> 8)
-                                   : ((eff_q * 18'd70) >> 8);
+    // 增大和减小方向使用相同斜率；150 计数死区覆盖中位噪声。
+    wire [17:0] off_next = (eff_q * 18'd41) >> 8;
     wire signed [9:0] vel_tmp = sign_q2
         ? (10'sd128 - $signed({2'b0, off_q[7:0]}))
         : (10'sd128 + $signed({2'b0, off_q[7:0]}));
@@ -41,8 +40,7 @@ module expression_map (
 
     wire [7:0] up_d      = vel_q - 8'd128;
     wire [8:0] expr_down = 9'd26 + {1'b0, vel_q[7:1]};
-    wire [8:0] expr_up   = 9'd90 + {1'b0, up_d} +
-                           {2'b0, up_d[7:2]} + {4'b0, up_d[7:4]};
+    wire [8:0] expr_up   = 9'd90 + {1'b0, up_d[7:1]};
     wire [8:0] expr_sum  = (vel_q <= 8'd128) ? expr_down : expr_up;
     wire [7:0] expr_next = (expr_sum > 9'd255) ? 8'd255 : expr_sum[7:0];
 

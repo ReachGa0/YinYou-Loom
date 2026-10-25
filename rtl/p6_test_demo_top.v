@@ -181,7 +181,7 @@ module p6_test_demo_top (
 
     reg [1:0] timbre_sel;   // 0=SINE 1=SQUARE 2=SAW 3=TRIANGLE
     reg [1:0] timbre_req;
-    reg [1:0] fx_mode;      // 0=DRY 1=CHORUS 2=VIBRATO 3=TREMOLO
+    reg [1:0] fx_mode;      // 0=DRY 1=CHORUS 2=DELAY 3=REVERB
     // MODE 四档：0=ONE(单音持续) 1=TRI(和弦持续) 2=PLUCK ONE 3=PLUCK TRI
     reg [1:0] mode_sel;
     reg [1:0] mode_req;
@@ -373,7 +373,7 @@ module p6_test_demo_top (
                 timbre_req <= timbre_req + 2'd1;      // SINE→SQUARE→SAW→TRI 循环
 
             if (ctrl_press_pulse[1])
-                fx_mode <= fx_mode + 2'd1;            // DRY→CHORUS→VIBRATO→TREMOLO 循环
+                fx_mode <= fx_mode + 2'd1;            // DRY→CHORUS→DELAY→REVERB 循环
 
             // PIN27：每按一次翻转"独奏/和弦"。
             // 用脉冲翻转而不是电平判定：轻触键点一下就能切换，不必一直按住；
@@ -516,12 +516,15 @@ module p6_test_demo_top (
     // 测试模式绕过音色补偿和持续表情，直接观察合成引擎原始混音。
     assign mix_sample = test_route ? mix_raw : expr_trim_q;
 
-    chorus #(
-        .SAMPLE_W  (16),
-        .ADDR_W    (11),
-        .MIN_DELAY (512),
-        .LFO_STEP  (24'd128)
-    ) u_chorus (
+    fx_engine #(
+        .SAMPLE_W        (16),
+        .CHORUS_ADDR_W   (11),
+        .CHORUS_MIN_DLY  (512),
+        .LFO_STEP        (24'd128),
+        .DELAY_ADDR_W    (14),
+        .DELAY_SAMPLES   (12000),
+        .REVERB_ADDR_W   (11)
+    ) u_fx (
         .clk              (clk_sys),
         .rst_n            (rst_n),
         .sample_en        (sample_en),
@@ -552,7 +555,7 @@ module p6_test_demo_top (
     // ------------------------------------------------------------
     // 2.4 寸 TFT 横屏 UI（docs/22）：ui_render 只读演奏状态，不反向改音频
     //   st_timbre : timbre_sel（0=SINE 1=SQUARE 2=SAW 3=TRI）
-    //   st_fx     : fx_mode（0=DRY 1=CHORUS 2=VIBRATO 3=TREMOLO）
+    //   st_fx     : fx_mode（0=DRY 1=CHORUS 2=DELAY 3=REVERB）
     //   st_mode   : 0=ONE 1=TRI 2=PLUCK ONE 3=PLUCK TRI
     //   st_note   : 当前发声音符（驱动波长）  st_voices: 同时发声数（驱动幅度 0..±40px）
     //   调式仍是占位（旋钮未接线），固定 0

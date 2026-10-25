@@ -20,7 +20,7 @@
 //     n        pix_we=1，pix_x/pix_y 有效   ——
 //     n+1      ——                           寄存器输出此刻对应 x/y
 //     n+2      采样 pix_data                 ——（要求仍对应同一个 x/y）
-//   采样发生在 pix_we 之后第 2 拍，因此组合输出和寄存器输出都满足。
+//   采样发生在 pix_we 之后第 3 拍；渲染器可先寄存列选择再同步读字库。
 //
 // SPI：模式 0（CPOL=0 / CPHA=0），MSB first，一个窗口事务内 CS 保持低。
 //      RGB565，每像素 2 字节，高字节先发（大端）。
@@ -393,29 +393,32 @@ module tft_st7789 #(
                             pix_step <= 3'd2;
                         end
                         3'd2: begin
-                            pix_rgb  <= pix_data;      // pix_we 之后第 2 拍采样
-                            pix_step <= 3'd3;
+                            pix_step <= 3'd3;          // 渲染器字模流水多等一拍
                         end
                         3'd3: begin
+                            pix_rgb  <= pix_data;      // pix_we 之后第 3 拍采样
+                            pix_step <= 3'd4;
+                        end
+                        3'd4: begin
                             if (!tx_busy && !tx_done) begin
                                 tx_start <= 1'b1;
                                 tx_byte  <= pix_rgb[15:8];
                                 tx_dc    <= 1'b1;
-                                pix_step <= 3'd4;
+                                pix_step <= 3'd5;
                             end
                         end
-                        3'd4: begin
-                            if (tx_done) pix_step <= 3'd5;
-                        end
                         3'd5: begin
+                            if (tx_done) pix_step <= 3'd6;
+                        end
+                        3'd6: begin
                             if (!tx_busy && !tx_done) begin
                                 tx_start <= 1'b1;
                                 tx_byte  <= pix_rgb[7:0];
                                 tx_dc    <= 1'b1;
-                                pix_step <= 3'd6;
+                                pix_step <= 3'd7;
                             end
                         end
-                        default: begin                 // 3'd6：推进到下一个像素
+                        default: begin                 // 3'd7：推进到下一个像素
                             if (tx_done) begin
                                 if (cur_x == wx1[8:0]) begin
                                     cur_x <= wx0[8:0];

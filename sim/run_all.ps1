@@ -116,6 +116,14 @@ Test-Suite "tb_synth_engine_32" @(
     "rtl/synth/voice_adsr.v",
     "rtl/synth/voice_alloc.v")
 Test-Suite "tb_chorus" @("sim/tb_chorus.v", "rtl/synth/chorus.v")
+Test-Suite "tb_delay_effect" @("sim/tb_delay_effect.v", "rtl/synth/delay_effect.v")
+Test-Suite "tb_reverb_effect" @("sim/tb_reverb_effect.v", "rtl/synth/reverb_effect.v")
+Test-Suite "tb_fx_engine" @(
+    "sim/tb_fx_engine.v",
+    "rtl/synth/fx_engine.v",
+    "rtl/synth/chorus.v",
+    "rtl/synth/delay_effect.v",
+    "rtl/synth/reverb_effect.v")
 
 Write-Host ""
 Write-Host "===== 5. P5 交互层（P5A 按键保底 / P5C 超声波）====="

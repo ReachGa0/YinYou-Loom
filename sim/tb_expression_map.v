@@ -83,6 +83,30 @@ module tb_expression_map;
         check_between(velocity,   8'd0,   8'd127, "low-voltage side lowers velocity");
         check_between(expression, 8'd26,  8'd89,  "low-voltage side lowers expression");
 
+        // 相同物理行程的上下方向必须得到相同的 velocity / expression 幅度。
+        filtered_y = 17'sd3500;
+        update_map();
+        begin : symmetry_check
+            reg [7:0] up_velocity;
+            reg [7:0] up_expression;
+
+            up_velocity   = velocity;
+            up_expression = expression;
+            filtered_y = 17'sd4500;
+            update_map();
+
+            if ((up_velocity - 8'd128) !== (8'd128 - velocity)) begin
+                $display("FAIL: velocity slope asymmetric: %0d vs %0d",
+                         up_velocity, velocity);
+                failures = failures + 1;
+            end
+            if ((up_expression - 8'd90) !== (8'd90 - expression)) begin
+                $display("FAIL: expression slope asymmetric: %0d vs %0d",
+                         up_expression, expression);
+                failures = failures + 1;
+            end
+        end
+
         $display("");
         $display("%s", (failures == 0) ? "RESULT: ALL PASS" : "RESULT: SOME CHECKS FAILED");
         $finish;

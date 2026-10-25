@@ -81,7 +81,7 @@ module tb_ui_render;
     reg [9:0]  wx0, wx1, wy0, wy1;
     reg [8:0]  cx;
     reg [7:0]  cy;
-    reg [2:0]  dst = 3'd0;                   // 0 空闲 1 起像素 2 等 3 采样
+    reg [2:0]  dst = 3'd0;                   // 0 空闲 1 起像素 2/3 等 4 采样
 
     reg [15:0] frame [0:76799];              // 320×240 整帧
     reg [7:0]  font_ref [0:1535];            // (ASCII-0x20)*16 + row
@@ -129,8 +129,9 @@ module tb_ui_render;
                 end
                 3'd1: begin pix_x_r <= cx; pix_y_r <= cy; pix_we_r <= 1'b1; dst <= 3'd2; end
                 3'd2: begin pix_we_r <= 1'b0; dst <= 3'd3; end
+                3'd3: begin dst <= 3'd4; end
                 default: begin
-                    // dst==3：pix_we 之后第 2 拍，px_data 有效
+                    // dst==4：字模地址和同步 ROM 均已完成，px_data 有效
                     idx = cy * 320 + cx;
                     if (idx >= 0 && idx < 76800) frame[idx] <= px_data;
                     if (tx_cnt >= 1 && tx_cnt <= 16) tx_pix[tx_cnt-1] <= tx_pix[tx_cnt-1] + 1;
@@ -267,9 +268,13 @@ module tb_ui_render;
         check_glyph(110, 130, 8'h46, C_HDR, C_BG);            // FX
         check_glyph(110, 146, 8'h44, C_SEL_TX, C_SEL_BG);     // DRY
         check_glyph(110, 162, 8'h43, C_TXT, C_BG);            // CHORUS
+        check_glyph(110, 178, 8'h44, C_TXT, C_BG);            // DELAY
+        check_glyph(110, 194, 8'h52, C_TXT, C_BG);            // REVERB
         check_glyph(217, 130, 8'h4D, C_HDR, C_BG);            // MODE
         check_glyph(217, 146, 8'h4F, C_SEL_TX, C_SEL_BG);     // ONE
         check_glyph(217, 162, 8'h54, C_TXT, C_BG);            // TRI
+        check_glyph(217, 178, 8'h50, C_TXT, C_BG);            // PLUCK ONE
+        check_glyph(217, 194, 8'h50, C_TXT, C_BG);            // PLUCK TRI
         check_glyph(3, 212, 8'h53, C_HINT, C_BG);             // S1
         check_glyph(276, 4, 8'h43, C_SCALE, C_BG);            // C MAJ
 

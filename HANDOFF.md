@@ -17,10 +17,11 @@
 
 新对话最短上下文：
 
-> P5 交互层已完成 8 键 PCB、MODE 四档、TONE/FX 各 4 档、X 弯音和
+> P5 交互层已完成 8 键 PCB、MODE 四档、TONE 四档、FX 四档
+> `DRY/CHORUS/DELAY/REVERB`、X 弯音和
 > Y 力度/持续表情；P5D 输入语义已闭环。R3 测试模式已接顶层并通过综合，
 > 实机启停和多路发声符合预期；精确谱峰计数与 ≤10ms 延迟因无仪器暂缓。
-> E1 32 复音和 32 路测试音已实现并综合通过，当前位流待实机确认。
+> E1 32 复音和 32 路测试音已实机确认；DELAY/REVERB 新位流已烧录，待听感确认。
 
 ## 1. 项目一句话
 
@@ -33,12 +34,13 @@
 |---|---|
 | 阶段 | **P6 验证 / E1 32 复音已完成**（载板 v0 并行推进） |
 | 角色 | **角色 D · 性能架构师 + 角色 F · 验证工程师** |
-| 固件 | `p6_test_demo` 32 声部已烧录 SRAM；**User Code = 0x000073C0** |
+| 固件 | `p6_test_demo` 32 声部 + 新 FX 已烧录；**User Code = 0x000098F5** |
 | 硬件 | 自制 8 键 PCB + 2.4″ TFT + HW-504 摇杆（外接 RC） |
-| 已验证（实机/仿真/综合） | 7 音名 + MODE、4 音色、4 效果、Pitch Bend、持续表情、拨弦、摇杆去尖峰、R3、32 声部仿真/综合 |
+| 已验证（实机/仿真/综合） | 7 音名 + MODE、4 音色、`DRY/CHORUS/DELAY/REVERB`、Pitch Bend、持续表情、拨弦、R3、32 声部 |
 | 当前测量缺口 | ≤10ms 延迟无仪器暂缓；精确 4 峰计数不能可靠确认 |
-| E1 状态 | ✅ 32 声部、32 路测试音、41 套回归、setup/hold 0/0、当前位流实机确认 |
-| 进阶缺口 | E2 第 3 维+延迟+混响 / E3 ≤5ms+完整视觉 / E4 |
+| E1 状态 | ✅ 32 声部、32 路测试音、当前位流实机确认 |
+| FX 状态 | ✅ DRY / CHORUS / DELAY / REVERB；44 套回归、综合 0/0、实机验收通过 |
+| 进阶缺口 | E2 第 3 维 + 滑音/扫弦 / E3 ≤5ms+完整视觉 / E4 |
 | 工作区 | 本批已提交；执行推送后与 `origin/main` 同步 |
 
 ## 3. 已完成（不要重做）
@@ -51,14 +53,15 @@
 | 8 键 PCB | 用户 2026-10-23 实机确认全部正常 |
 | MODE 四档 | ONE / TRI / PLUCK ONE / PLUCK TRI，含一次性拨弦包络 |
 | TONE 四档 | SINE / SQUARE / SAW / TRIANGLE |
-| FX 四档 | DRY / CHORUS / VIBRATO / TREMOLO |
+| FX 四档 | DRY / CHORUS / DELAY / REVERB |
 | 摇杆 RC 链路 | `rc_adc.v` + `pitch_bend_map.v`；X 弯音、Y 表情均实测有效 |
 | 摇杆去尖峰 | `joy_filter.v` 3 点中值 + 一阶低通；`tb_joy_filter` PASS |
 | 力度 / 表情语义 | `expression_map.v`：note-on 力度与持续 expression 分离；`tb_expression_map` PASS |
 | R3 集成 | `test_mode_router.v` + `test_mode.v` 接 `p6_test_demo`；PIN25 切换 |
 | E1 32 复音 | 32 声部分配、顺序混音、32 个质数频率、共享弯音乘法；32 峰频谱仿真通过 |
-| 回归 | 全量 **41/41 PASS**；含 4/32 声部、32 路频谱、R3、UI |
-| 综合 | Logic 10938/20736、Register 6665/15750、BSRAM 20/46、DSP 22/24；setup/hold 0/0 |
+| FX 扩展 | `delay_effect.v` 约 250 ms 反馈延迟；`reverb_effect.v` 四路短反馈混响；`fx_engine.v` 统一四档和渐变 |
+| 回归 | 全量 **44/44 PASS**；含 4/32 声部、32 路频谱、R3、UI、DELAY/REVERB |
+| 综合 | Logic 11666/20736、Register 6881/15750、BSRAM 43/46、DSP 21.5/24；setup/hold 0/0 |
 
 ## 4. 当前缺口
 
@@ -78,7 +81,7 @@
 |---|---|---|---|
 | **E1** | ≥32 复音 / ≥32 加法分量 / 多条物理建模（三选一） | ✅ 32 复音；32 路仿真谱峰 | **实机确认当前位流** |
 | E2.1 | ≥3 维表情 | 2 维 | 用变阻器加第 3 维（颤音深度/滑音时间） |
-| E2.6/7/8 | 混响 / 延迟 / 合唱 | 只有合唱 | 补 delay + reverb |
+| E2.6/7/8 | 混响 / 延迟 / 合唱 | ✅ 三档均已实现 | 实机听感确认 |
 | **E3** | ≤5ms、无抖动、可视化 | 波形部分；其余无 | LED 指引 + 李萨如优先，频谱成本高 |
 | E4 | 脱机 LED 曲目指引；蓝牙/App 可选 | 无 | LED 指引可做；蓝牙放弃 |
 | **R3** | 测试模式多频输出 + 独立谱峰 | 32 路质数频率仿真通过 | **当前位流实机确认** |
@@ -91,11 +94,11 @@
 > 第一批 1–13 已完成，14 因无仪器暂缓，12/15 缺仪器级证据；
 > 第二批 16–19 已完成，20–21 待当前 32 声部位流实机确认。
 
-**第一优先：确认当前 32 声部位流**
+**当前状态：新 FX 已验收**
 
-1. 当前位流已经烧录，确认普通演奏、4 音色、4 效果和摇杆仍正常；
-2. PIN25 进入 R3，确认 32 个声部起音、TFT 显示 TEST、退出后无卡音；
-3. 如条件允许记录频谱，但当前没有可靠仪器计数，不阻塞下一步。
+1. S2 循环、四档界面、DELAY 回声和 REVERB 尾音已实机确认；
+2. 32 声部普通演奏、摇杆和 R3 未受影响；
+3. 下一批进入 E2 第三维表情。
 
 **下一批：22–26**
 
@@ -159,11 +162,11 @@ VRY 同理 → PIN49。摇杆 `+5V` 丝印接 **3V3**。
   "C:\Users\ReachGao\Desktop\CodeX\loom\fpga\p6_test_demo\impl\pnr\p6_test_demo.fs"
 ```
 
-- 当前版本 Logic 10938/20736、Register 6665/15750、BSRAM 20/46、
-  DSP 22/24，setup/hold 0 违例，最差 setup slack `+0.391 ns`。
+- 当前版本 Logic 11666/20736、Register 6881/15750、BSRAM 43/46、
+  DSP 21.5/24，setup/hold 0 违例，最差 setup slack `+0.044 ns`。
 - 位流 SHA256：
-  `B64F9A3B922A0747875CF923DD6BB06C88E1AEAE6B428C2AD1949F0FB889DB44`。
-- 2026-10-24 烧录读回：`User Code = 0x000073C0`、
+  `10A79E8819F5276E40D64226DA26DCCDABEFCAF660DF2F3CEB870D7C5EB477A3`。
+- 2026-10-25 烧录读回：`User Code = 0x000098F5`、
   `Status Code = 0x00006020`。
 - **`DEBUG_JOY=0`**，正式波形 UI 已恢复。
 
@@ -180,7 +183,8 @@ VRY 同理 → PIN49。摇杆 `+5V` 丝印接 **3V3**。
   退出时等测试音释放后恢复演奏。
 - **32 声部资源策略**：逐音增益乘法移入 mixer 顺序累加；弯音由
   `bend_scan.v` 共享一个乘法器逐声部扫描，避免复制 32 份乘法链。
-- **TONE/FX 各 4 档**；音色补偿 SINE/TRI 1.0、SQUARE 0.5、SAW 0.75。
+- **TONE 四档**；**FX 四档 = DRY / CHORUS / DELAY / REVERB**；
+  音色补偿 SINE/TRI 1.0、SQUARE 0.5、SAW 0.75。
 
 ## 10. 已知问题 / 技术债
 
@@ -191,7 +195,8 @@ VRY 同理 → PIN49。摇杆 `+5V` 丝印接 **3V3**。
 | R3 实机证据 | 当前 32 声部位流启停、TFT TEST、LED 和多路发声已确认 |
 | `docs/13` 旧产品形态 | 五度环/12 扇区已被 7 键方案取代，需在 P5D 统一 |
 | 32 复音实机验证 | 用户已确认当前位流正常 |
-| 32 声部时序余量 | 最差 setup slack `+0.391 ns`；后续 RTL 改动仍必须重新综合 |
+| 新 FX 资源余量 | BSRAM 43/46，只剩 3 块；后续增加延迟线/混响线必须先检查存储预算 |
+| 时序余量 | 最差 setup slack `+0.044 ns`；后续 RTL 改动必须重新综合 |
 
 ### 踩坑记录（详见 `docs/19` 案例 21–25）
 
@@ -213,7 +218,10 @@ VRY 同理 → PIN49。摇杆 `+5V` 丝印接 **3V3**。
 | `rtl/input/input_map.v` / `chord_map.v` | 7 键音名 / 7 个自然三和弦 |
 | `rtl/synth/voice_adsr.v` | ADSR + 一次性拨弦 |
 | `rtl/synth/voice.v` / `synth_top.v` / `synth_engine.v` | 合成链路（弯音/力度/拨弦） |
-| `rtl/synth/chorus.v` | FX 四档（DRY/CHORUS/VIBRATO/TREMOLO） |
+| `rtl/synth/chorus.v` | 单抽头合唱（DRY/CHORUS） |
+| `rtl/synth/delay_effect.v` | 约 250 ms 反馈延迟 |
+| `rtl/synth/reverb_effect.v` | 四路短反馈混响 |
+| `rtl/synth/fx_engine.v` | P6 四档效果选择与切换渐变 |
 | `rtl/display/ui_render.v` / `tft_st7789.v` | TFT UI 与驱动 |
 | `rtl/display/wave_capture.v` | 真实采样抓取（波形显示，当前调试页接管） |
 | `rtl/test/test_mode.v` | R3 32 路质数相干测试音 |
