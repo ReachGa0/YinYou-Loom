@@ -32,7 +32,7 @@ Y 轴同时提供 note-on 力度和持续 expression。超声波与 ADS1115 已�
 
 | 指标 | 目标值 | 状态 |
 |---|---|---|
-| 复音数 | **32 路** | 32 声部仿真、频谱和综合已通过；待当前位流实机确认 |
+| 复音数 | **32 路** | 当前位流已由用户实机确认；精确谱峰计数仍待仪器级证据 |
 | 端到端延迟 | **≤ 10 ms** | 设计目标 |
 | 演奏维度 | Pitch Bend + note-on 力度 / 持续 expression，共 **2 维** | 已实现 |
 | 音色数量 | **4 种**，实时切换 | 已实现 |
@@ -207,16 +207,16 @@ Y 轴同时提供 note-on 力度和持续 expression。超声波与 ADS1115 已�
 
 | 项目 | 状态 |
 |---|---|
-| 当前阶段 | **P6 测试模式与验证 / E1 冲刺**：32 声部已实现并综合通过；等待当前位流实机确认 |
+| 当前阶段 | **P6 测试模式与验证 / E1 已完成**：32 声部当前位流已由用户实机确认；精确谱峰计数仍待仪器 |
 | 已完成 | P0–P4、基础 4 声部与 E1 32 声部合成、I2S 出声、8 键 PCB、MODE 四档、TONE 四档、FX 四档 `DRY/CHORUS/DELAY/REVERB`、TFT、拨弦 |
 | 已完成 | 摇杆 X/Y RC 链路；新增 3 点中值去尖峰 + 一阶低通；Y 轴拆分为 note-on `velocity` 和持续 `expression` |
 | 已完成 | P5D 输入语义闭环；正式波形 UI 已恢复，`DEBUG_JOY=0` |
 | 已完成 | R3 测试模式通过 PIN25 切换；当前测试模式扩展到 32 个质数相干频率，仿真可识别 32 个峰 |
 | 下一步 | 按 22–26 批次继续：优先 E2 第三维表情，其次滑音/扫弦和低成本视觉 |
-| 验证 | 全量仿真 **44/44 PASS**，新增 DELAY、四路 REVERB、FX 模式切换和更新后的字模检查 |
-| 综合 | `p6_test_demo`：Logic **11666/20736**、Register **6881/15750**、BSRAM **43/46**、DSP **21.5/24**；setup/hold **0/0 违例**，最差 setup slack `+0.044 ns` |
-| 位流 | `fpga/p6_test_demo/impl/pnr/p6_test_demo.fs`；SHA256 `10A79E8819F5276E40D64226DA26DCCDABEFCAF660DF2F3CEB870D7C5EB477A3`；**已烧录 SRAM**，User Code `0x000098F5` |
-| 硬件状态 | 32 声部和 `DRY/CHORUS/DELAY/REVERB` 已通过实机验收 |
+| 验证 | 全量仿真 **44/44 PASS**；FX 含切模清空、精确脉冲延迟、满幅共振与混响内部削波检查 |
+| 综合 | `p6_test_demo`：Logic **12436/20736**、Register **6977/15750**、BSRAM **32/46**、DSP **21/24**；setup/hold **0/0 违例**，最差 setup slack `+0.365 ns` |
+| 位流 | `fpga/p6_test_demo/impl/pnr/p6_test_demo.fs`；SHA256 `376C5A9E7DF0C7231C5AC142813B3EA116D385B7AB927C36F9E8E9526693D539`；**已烧录 SRAM**，User Code `0x000000D7` |
+| 硬件状态 | 32 声部和四档 FX 已验收；混响增益修复版已烧录，待试听确认 |
 | 载板状态 | 摆件和内层铺铜已有记录，但旧器件表仍含超声波/四键；**接口整改前禁止按旧计划走线**（详见 `docs/23` §8） |
 | 进阶缺口 | E2 第 3 维、滑音/扫弦 ❌；E3 ≤5ms、确定性抖动和完整视觉 ❌；E4 ❌ |
 | 已确认决策 | E1 32 复音；8 键输入；MODE 四档；TONE 四档；FX=`DRY/CHORUS/DELAY/REVERB`；X=Pitch Bend、Y=力度/expression；取消超声波和 ADS1115；PIN25=R3 |

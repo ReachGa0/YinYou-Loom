@@ -51,6 +51,8 @@ module mixer #(
     reg                    scan_done_seen;
     reg                    capture;
     reg                    capture_d1;
+    reg                    capture_d2;
+    reg signed [ACC_W+15:0] scaled_q;
 
     always @* begin
         selected_sample = {SAMPLE_W{1'b0}};
@@ -151,14 +153,18 @@ module mixer #(
             scan_done_seen <= 1'b0;
             capture      <= 1'b0;
             capture_d1   <= 1'b0;
+            capture_d2   <= 1'b0;
+            scaled_q     <= {(ACC_W+16){1'b0}};
             mix_sample   <= {SAMPLE_W{1'b0}};
             mix_valid    <= 1'b0;
         end else begin
             valid_d1   <= voice_valid_flat;
             add_valid  <= valid_any_d1;
             sum_valid  <= add_valid;
-            mix_valid  <= capture_d1;
             capture_d1 <= capture;
+            capture_d2 <= capture_d1;
+            mix_valid  <= capture_d2;
+            scaled_q   <= scaled;
             capture    <= 1'b0;
 
             if (valid_any_d1) begin
@@ -196,8 +202,8 @@ module mixer #(
                 end
             end
 
-            if (capture_d1)
-                mix_sample <= saturate(scaled >>> 15);
+            if (capture_d2)
+                mix_sample <= saturate(scaled_q >>> 15);
         end
     end
 endmodule

@@ -521,9 +521,14 @@ module p6_test_demo_top (
         .CHORUS_ADDR_W   (11),
         .CHORUS_MIN_DLY  (512),
         .LFO_STEP        (24'd128),
-        .DELAY_ADDR_W    (14),
+        .MEM_ADDR_W      (14),
         .DELAY_SAMPLES   (12000),
-        .REVERB_ADDR_W   (11)
+        .CLEAR_SAMPLES   (12000),
+        .REV_LEN0        (997),
+        .REV_LEN1        (1123),
+        .REV_LEN2        (1277),
+        .REV_LEN3        (1427),
+        .FADE_SAMPLES    (512)
     ) u_fx (
         .clk              (clk_sys),
         .rst_n            (rst_n),
