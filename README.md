@@ -210,13 +210,13 @@ Y 轴同时提供 note-on 力度和持续 expression。超声波与 ADS1115 已�
 | 当前阶段 | **P6 测试模式与验证 / E1 已完成**：32 声部当前位流已由用户实机确认；精确谱峰计数仍待仪器 |
 | 已完成 | P0–P4、基础 4 声部与 E1 32 声部合成、I2S 出声、8 键 PCB、MODE 四档、TONE 四档、FX 四档 `DRY/CHORUS/DELAY/REVERB`、TFT、拨弦 |
 | 已完成 | 摇杆 X/Y RC 链路；新增 3 点中值去尖峰 + 一阶低通；Y 轴拆分为 note-on `velocity` 和持续 `expression` |
-| 已完成 | P5D 输入语义闭环；正式波形 UI 已恢复，`DEBUG_JOY=0` |
+| 已完成 | P5D 输入语义闭环；完整演示采用李萨如相位轨迹和右侧菜单，用户反馈刷新优化后改善 |
 | 已完成 | R3 测试模式通过 PIN25 切换；当前测试模式扩展到 32 个质数相干频率，仿真可识别 32 个峰 |
-| 下一步 | 按 22–26 批次继续：优先 E2 第三维表情，其次滑音/扫弦和低成本视觉 |
-| 验证 | 全量仿真 **44/44 PASS**；FX 含切模清空、精确脉冲延迟、满幅共振与混响内部削波检查 |
-| 综合 | `p6_test_demo`：Logic **12436/20736**、Register **6977/15750**、BSRAM **32/46**、DSP **21/24**；setup/hold **0/0 违例**，最差 setup slack `+0.365 ns` |
-| 位流 | `fpga/p6_test_demo/impl/pnr/p6_test_demo.fs`；SHA256 `376C5A9E7DF0C7231C5AC142813B3EA116D385B7AB927C36F9E8E9526693D539`；**已烧录 SRAM**，User Code `0x000000D7` |
-| 硬件状态 | 32 声部和四档 FX 已验收；混响增益修复版已烧录，待试听确认 |
+| 下一步 | 用户要求暂不开始重做 REVERB；后续按用户指示处理噪声，E2 第三维和 LED 指引仍待做 |
+| 验证 | 全量仿真 **51/51 PASS**，含 REVERB 诊断测试。仿真通过不代表实机混响正常 |
+| 综合 | 完整演示 `lissajous_demo`：Logic **12620/20736**、Register **7048/15750**、BSRAM **33/46**、DSP **21/24**；setup/hold **0/0 违例** |
+| 位流 | `fpga/lissajous_demo/impl/pnr/lissajous_demo.fs`；SHA256 `91AA94E95F9F1CA5502001BE7954792C43034336A17CF7D406249D098A9B0371`；User Code `0x0000EEBA`。外部 Flash 写入和校验成功，断电后自动加载待明确确认 |
+| 硬件状态 | 32 声部、DRY / CHORUS / DELAY 已有实机通过记录；当前 REVERB 首音后有持续撕裂噪声，根因未确定 |
 | 载板状态 | 摆件和内层铺铜已有记录，但旧器件表仍含超声波/四键；**接口整改前禁止按旧计划走线**（详见 `docs/23` §8） |
 | 进阶缺口 | E2 第 3 维、滑音/扫弦 ❌；E3 ≤5ms、确定性抖动和完整视觉 ❌；E4 ❌ |
 | 已确认决策 | E1 32 复音；8 键输入；MODE 四档；TONE 四档；FX=`DRY/CHORUS/DELAY/REVERB`；X=Pitch Bend、Y=力度/expression；取消超声波和 ADS1115；PIN25=R3 |

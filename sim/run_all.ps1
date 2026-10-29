@@ -192,6 +192,22 @@ Test-Suite "tb_tft_st7789_invoff" @(
 
 Test-Suite "tb_ui_render" @(
     "sim/tb_ui_render.v", "rtl/display/ui_render.v", "rtl/display/font8x16_rom.v")
+Test-Suite "tb_lissajous_capture" @(
+    "sim/tb_lissajous_capture.v", "rtl/display/lissajous_capture.v")
+Test-Suite "tb_reverb_probe" @(
+    "sim/tb_reverb_probe.v", "rtl/synth/reverb_probe_fx_engine.v")
+Test-Suite "tb_reverb_split_probe" @(
+    "sim/tb_reverb_split_probe.v", "rtl/synth/reverb_probe_fx_engine.v",
+    "rtl/synth/reverb_dry_fx_engine.v", "rtl/synth/reverb_wet_fx_engine.v")
+Test-Suite "tb_reverb_tap_probe" @(
+    "sim/tb_reverb_tap_probe.v", "rtl/synth/reverb_tap_fx_engine.v")
+Test-Suite "tb_reverb_sample_compare" @(
+    "sim/tb_reverb_sample_compare.v", "rtl/synth/reverb_sample_compare.v",
+    "rtl/synth/reverb_compare_fx_engine.v")
+Test-Suite "tb_ui_lissajous_render" @(
+    "sim/tb_ui_lissajous_render.v", "rtl/display/ui_lissajous_render.v", "rtl/display/font8x16_rom.v")
+Test-Suite "tb_ui_lissajous_dirty" @(
+    "sim/tb_ui_lissajous_dirty.v", "rtl/display/ui_lissajous_render.v", "rtl/display/font8x16_rom.v")
 
 Test-Suite "tb_wave_capture" @(
     "sim/tb_wave_capture.v", "rtl/display/wave_capture.v")

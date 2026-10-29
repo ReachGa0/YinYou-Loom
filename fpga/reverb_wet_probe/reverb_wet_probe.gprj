@@ -1,0 +1,46 @@
+<?xml version="1" encoding="UTF-8"?>
+<!DOCTYPE gowin-fpga-project>
+<Project>
+    <Template>FPGA</Template>
+    <Version>5</Version>
+    <Device name="GW2AR-18C" pn="GW2AR-LV18QN88C8/I7">gw2ar18c-000</Device>
+    <FileList>
+        <File path="src/p6_test_demo.cst" type="file.cst" enable="1"/>
+        <File path="src/p6_test_demo.sdc" type="file.sdc" enable="1"/>
+        <File path="../loom/src/gowin_rpll/gowin_rpll.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/reverb_wet_probe_top.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/input/chord_map.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/input/input_map.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/common/sync_reset.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/common/frac_div.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/input/key_scan.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/input/rc_adc.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/input/joy_filter.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/input/expression_map.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/input/pitch_bend_map.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/test/test_mode_router.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/test/test_mode.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/synth/wavetable_rom.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/synth/wavetable_bank.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/synth/wavetable_arbiter.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/synth/voice_osc.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/synth/voice_adsr.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/synth/voice.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/synth/voice_alloc.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/synth/mixer.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/synth/synth_top.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/synth/bend_scan.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/synth/synth_engine.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/synth/chorus.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/synth/delay_effect.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/synth/reverb_effect.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/synth/reverb_wet_fx_engine.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/io/i2s_tx.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/io/i2c_master.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/display/tft_st7789.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/display/ui_lissajous_render.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/display/lissajous_capture.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/display/wave_capture.v" type="file.verilog" enable="1"/>
+        <File path="../../rtl/display/font8x16_rom.v" type="file.verilog" enable="1"/>
+    </FileList>
+</Project>
